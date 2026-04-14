@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '买菜助手',
-  description: '智能买菜计划与库存管理助手',
+  title: '菜篮子',
+  description: '智能买菜计划与库存管理',
   generator: 'v0.app',
   icons: {
     icon: [
