@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { ArrowUpDown, Save, Package, ChefHat, ShoppingCart } from 'lucide-react'
+import { ArrowUpDown, Save, Package, ChefHat, ShoppingCart, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingButton } from '@/components/ui/loading-button'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { Input } from '@/components/ui/input'
 import { useData } from '@/contexts/DataContext'
 import { useRouter } from 'next/navigation'
 
@@ -25,6 +26,7 @@ export function InventoryPage() {
   const [showSaveError, setShowSaveError] = useState(false)
   const [showAddToPurchaseError, setShowAddToPurchaseError] = useState(false)
   const [showDeleteError, setShowDeleteError] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
 
   // 当 inventory 变化时，更新 quantities 状态
@@ -43,6 +45,14 @@ export function InventoryPage() {
       return b.quantity - a.quantity
     }
   })
+
+  const filteredInventory = useMemo(() => {
+    if (!searchQuery) return sortedInventory
+    const query = searchQuery.toLowerCase().trim()
+    return sortedInventory.filter(item => 
+      item.name.toLowerCase().includes(query)
+    )
+  }, [sortedInventory, searchQuery])
 
   // 根据库存推荐菜谱
   const recommendedRecipes = useMemo(() => {
@@ -189,10 +199,24 @@ export function InventoryPage() {
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {inventory.length === 0 ? (
+        {/* 搜索框 */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="搜索食材..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-white border-border shadow-sm"
+            />
+          </div>
+        </div>
+
+        {filteredInventory.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Package className="w-12 h-12 mb-3 opacity-50" />
-            <p className="text-sm">库存为空</p>
+            <p className="text-sm">{searchQuery ? '没有找到匹配的食材' : '库存为空'}</p>
           </div>
         ) : (
           <Card className="shadow-sm p-0">
@@ -207,7 +231,7 @@ export function InventoryPage() {
               
               {/* 数据行 */}
               <div className="divide-y divide-border">
-                {sortedInventory.map(item => {
+                {filteredInventory.map(item => {
                   const currentQty = quantities[item.id] || 0
                   return (
                     <div 

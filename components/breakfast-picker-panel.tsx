@@ -31,11 +31,19 @@ export function BreakfastPickerPanel({
     return recipes.filter(r => r.category === 'breakfast')
   }, [recipes])
   
+  // 早餐相关的emoji数组
+  const breakfastEmojis = [
+    '🍞', '🥐', '🥨', '🧀', '🥚', '🍳', '🥓', '🍖',
+    '🌭', '🍔', '🥪', '🥙', '🧆', '🌮', '🌯', '🥗',
+    '🍿', '🥘', '🍝', '🍜'
+  ]
+
   const wheelOptions = useMemo(() => {
-    const recipeOptions = breakfastRecipes.map(recipe => ({
+    // 为每个早餐食谱分配一个随机emoji
+    const recipeOptions = breakfastRecipes.map((recipe, index) => ({
       id: recipe.id,
       name: recipe.name,
-      emoji: '🍽️'
+      emoji: breakfastEmojis[index % breakfastEmojis.length]
     }))
     const allOptions = [...recipeOptions, ...wheelExtras]
     return allOptions.filter(option => !wheelHiddenIds.includes(option.id))
@@ -50,7 +58,7 @@ export function BreakfastPickerPanel({
       <div>
         <p className="text-xs text-muted-foreground mb-2">点选早餐</p>
         <div className="flex flex-wrap gap-2">
-          {breakfastRecipes.map((recipe) => (
+          {breakfastRecipes.map((recipe, index) => (
             <button
               key={recipe.id}
               type="button"
@@ -62,7 +70,7 @@ export function BreakfastPickerPanel({
                   : "border-border bg-muted/40 hover:bg-muted"
               )}
             >
-              🍽️ {recipe.name}
+              {breakfastEmojis[index % breakfastEmojis.length]} {recipe.name}
             </button>
           ))}
         </div>

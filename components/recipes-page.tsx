@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingButton } from '@/components/ui/loading-button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { RecipeFormDialog, type RecipeFormValues } from '@/components/recipe-form-dialog'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { useAppStore } from '@/lib/store'
@@ -42,6 +43,7 @@ export function RecipesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDeleteLoading, setShowDeleteLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (activeTab === 'recipes' && pendingRecipeAdd) {
@@ -57,6 +59,15 @@ export function RecipesPage() {
     inventory.forEach((i) => m.set(i.name, i.quantity))
     return m
   }, [inventory])
+
+  const filteredRecipes = useMemo(() => {
+    if (!searchQuery) return recipes
+    const query = searchQuery.toLowerCase().trim()
+    return recipes.filter(recipe => 
+      recipe.name.toLowerCase().includes(query) ||
+      recipe.ingredients.some(ing => ing.name.toLowerCase().includes(query))
+    )
+  }, [recipes, searchQuery])
 
   const ensureIngredientsExist = async (values: RecipeFormValues) => {
     const seen = new Set<string>()
@@ -148,13 +159,27 @@ export function RecipesPage() {
       </header>
 
       <main className="flex-1 px-4 py-4 w-full max-w-full box-border">
-        {recipes.length === 0 ? (
+        {/* 搜索框 */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="搜索菜谱或食材..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-white border-border shadow-sm"
+            />
+          </div>
+        </div>
+
+        {filteredRecipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-sm text-center">
-            暂无菜谱，点击右上角添加新菜。
+            {searchQuery ? '没有找到匹配的菜谱' : '暂无菜谱，点击右上角添加新菜。'}
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {recipes.map((recipe, index) => {
+            {filteredRecipes.map((recipe, index) => {
               const isAlt = index % 2 === 1
               return (
                 <Card
