@@ -44,6 +44,9 @@ export function RecipesPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showDeleteLoading, setShowDeleteLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showRecipeExistsError, setShowRecipeExistsError] = useState(false)
+  const [showError, setShowError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     if (activeTab === 'recipes' && pendingRecipeAdd) {
@@ -91,7 +94,7 @@ export function RecipesPage() {
         // 检查菜谱名称是否已存在
         const existingRecipe = recipes.find(recipe => recipe.name === values.name)
         if (existingRecipe) {
-          alert('菜谱已存在，无法添加')
+          setShowRecipeExistsError(true)
           return
         }
         
@@ -108,7 +111,7 @@ export function RecipesPage() {
         // 检查菜谱名称是否已被其他菜谱使用
         const existingRecipe = recipes.find(recipe => recipe.name === values.name && recipe.id !== editingRecipe.id)
         if (existingRecipe) {
-          alert('菜谱名称已存在，无法修改')
+          setShowRecipeExistsError(true)
           return
         }
         
@@ -128,7 +131,8 @@ export function RecipesPage() {
       setShowSuccess(true)
     } catch (error) {
       console.error('保存菜谱失败:', error)
-      alert('保存失败，请重试')
+      setErrorMessage('保存失败，请重试')
+      setShowError(true)
     } finally {
       setIsSubmitting(false)
     }
@@ -147,7 +151,7 @@ export function RecipesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-20 max-w-full overflow-x-hidden">
+    <div className="flex flex-col min-h-screen pb-20 max-w-full">
       <header className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border z-10">
         <div className="flex items-center justify-between px-4 h-14">
           <h1 className="font-semibold">菜谱</h1>
@@ -158,9 +162,9 @@ export function RecipesPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 w-full max-w-full box-border">
+      <main className="flex-1 px-4 py-4">
         {/* 搜索框 */}
-        <div className="mb-4">
+        <div className="mb-4 sticky top-14 z-50 bg-background/90 backdrop-blur-sm p-2 rounded-md border border-border shadow-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -209,7 +213,11 @@ export function RecipesPage() {
                         <span
                           className={cn(
                             "text-[10px] leading-none shrink-0 px-2 py-0.5 rounded-full",
-                            isAlt ? "bg-[#c5d8c5] text-[#3d4f38]" : "bg-muted text-muted-foreground"
+                            recipe.category === 'breakfast' 
+                              ? "bg-amber-100 text-amber-800"
+                              : recipe.category === 'meal'
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-blue-100 text-blue-800"
                           )}
                         >
                           {getCategoryLabel(recipe.category)}
@@ -319,7 +327,8 @@ export function RecipesPage() {
               setShowSuccess(true)
             } catch (error) {
               console.error('删除菜谱失败:', error)
-              alert('删除失败，请重试')
+              setErrorMessage('删除失败，请重试')
+              setShowError(true)
             } finally {
               setShowDeleteLoading(false)
             }
@@ -335,6 +344,24 @@ export function RecipesPage() {
         message="保存成功"
         onConfirm={() => setShowSuccess(false)}
         onCancel={() => setShowSuccess(false)}
+        showCancelButton={false}
+      />
+
+      <ConfirmModal
+        isOpen={showRecipeExistsError}
+        title="提示"
+        message="菜谱已存在，无法添加"
+        onConfirm={() => setShowRecipeExistsError(false)}
+        onCancel={() => setShowRecipeExistsError(false)}
+        showCancelButton={false}
+      />
+
+      <ConfirmModal
+        isOpen={showError}
+        title="提示"
+        message={errorMessage}
+        onConfirm={() => setShowError(false)}
+        onCancel={() => setShowError(false)}
         showCancelButton={false}
       />
     </div>

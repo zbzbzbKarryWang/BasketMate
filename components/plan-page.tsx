@@ -10,6 +10,7 @@ import { RecipeDrawer } from '@/components/recipe-drawer'
 import { BreakfastPickerPanel } from '@/components/breakfast-picker-panel'
 import { useAppStore } from '@/lib/store'
 import { useData } from '@/contexts/DataContext'
+import { supabase } from '@/lib/supabaseClient'
 import {
   formatDate,
   getRelativeDay,
@@ -18,9 +19,10 @@ import {
 } from '@/lib/mock-data'
 import type { MealPlan, Recipe, BreakfastOption } from '@/lib/types'
 import { ingredientStockOk } from '@/lib/ingredient-stock'
+import { getBreakfastEmojiById } from '@/lib/breakfast-emojis'
 
 export function PlanPage() {
-  const { mealPlans, inventory, recipes, activePurchaseTask, deletePlan, updatePlan, recalculateAndPersistPurchaseTask } = useData()
+  const { mealPlans, inventory, recipes, activePurchaseTask, deletePlan, updatePlan, updateIngredient, recalculateAndPersistPurchaseTask, refresh } = useData()
   const { showNewPlan, setShowNewPlan } = useAppStore()
 
   const [showPlanner, setShowPlanner] = useState(false)
@@ -32,6 +34,10 @@ export function PlanPage() {
   const [showDeleteError, setShowDeleteError] = useState(false)
   const [showSaveSuccess, setShowSaveSuccess] = useState(false)
   const [showAllPlannedError, setShowAllPlannedError] = useState(false)
+  const [completeConfirm, setCompleteConfirm] = useState<string | null>(null)
+  const [isCompleting, setIsCompleting] = useState(false)
+  const [showCompleteSuccess, setShowCompleteSuccess] = useState(false)
+  const [showCompleteError, setShowCompleteError] = useState(false)
   
   // 状态管理修改中的计划
   const [modifiedPlans, setModifiedPlans] = useState<Map<string, MealPlan>>(new Map())
@@ -43,6 +49,21 @@ export function PlanPage() {
     () => new Date(todayStr + "T12:00:00").getTime(),
     [todayStr]
   )
+  
+  // 计算昨天的日期字符串（使用本地时间）
+  const yesterdayStr = useMemo(() => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const year = yesterday.getFullYear()
+    const month = String(yesterday.getMonth() + 1).padStart(2, '0')
+    const day = String(yesterday.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }, [])
+  
+  // 早餐食谱
+  const breakfastRecipes = useMemo(() => {
+    return recipes.filter(r => r.category === 'breakfast')
+  }, [recipes])
 
   const sortedPlans = useMemo(() => {
     return [...mealPlans].sort((a, b) => {
@@ -205,6 +226,97 @@ export function PlanPage() {
     })
     setShowRecipePicker(null)
   }
+  
+  // 处理完成计划
+  const handleCompletePlan = async (planId: string) => {
+    setIsCompleting(true)
+    try {
+      const plan = mealPlans.find(p => p.id === planId)
+      if (!plan) {
+        throw new Error('计划不存在')
+      }
+      
+      // a. 获取该计划所需的所有食材及数量
+      const ingredientNeeds = new Map<string, number>()
+      
+      // 处理早餐
+      if (plan.breakfast_recipe_id) {
+        const breakfastRecipe = recipes.find(r => r.id === plan.breakfast_recipe_id)
+        if (breakfastRecipe) {
+          breakfastRecipe.ingredients.forEach(ing => {
+            const invItem = inventory.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+            if (invItem) {
+              const currentNeed = ingredientNeeds.get(invItem.id) || 0
+              ingredientNeeds.set(invItem.id, currentNeed + ing.quantity)
+            }
+          })
+        }
+      }
+      
+      // 处理正餐
+      plan.recipes.forEach(recipe => {
+        recipe.ingredients.forEach(ing => {
+          const invItem = inventory.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+          if (invItem) {
+            const currentNeed = ingredientNeeds.get(invItem.id) || 0
+            ingredientNeeds.set(invItem.id, currentNeed + ing.quantity)
+          }
+        })
+      })
+      
+      // b. 扣减库存
+      for (const [ingredientId, need] of ingredientNeeds) {
+        const invItem = inventory.find(item => item.id === ingredientId)
+        if (invItem) {
+          const newQuantity = Math.max(0, invItem.quantity - need)
+          await updateIngredient(ingredientId, newQuantity)
+        }
+      }
+      
+      // c. 更新采购清单
+      if (activePurchaseTask) {
+        const pendingItems = [...(activePurchaseTask.pending_items || [])]
+        const updatedPendingItems = []
+        
+        for (const item of pendingItems) {
+          if (ingredientNeeds.has(item.ingredient_id) && !item.checked) {
+            const need = ingredientNeeds.get(item.ingredient_id) || 0
+            const newNeed = item.need_quantity - need
+            
+            if (newNeed > 0) {
+              updatedPendingItems.push({
+                ...item,
+                need_quantity: newNeed
+              })
+            }
+            // 如果 newNeed <= 0，则不添加到 updatedPendingItems 中，相当于移除
+          } else {
+            updatedPendingItems.push(item)
+          }
+        }
+        
+        // 保存更新后的 pending_items 到数据库
+        await supabase
+          .from('purchase_tasks')
+          .update({ pending_items: updatedPendingItems })
+          .eq('id', activePurchaseTask.id)
+      }
+      
+      // d. 删除计划
+      await deletePlan(planId)
+      
+      // e. 刷新数据
+      await refresh()
+      
+      setShowCompleteSuccess(true)
+    } catch (error) {
+      console.error('完成计划失败:', error)
+      setShowCompleteError(true)
+    } finally {
+      setCompleteConfirm(null)
+      setIsCompleting(false)
+    }
+  }
 
   if (showPlanner) {
     return (
@@ -245,9 +357,11 @@ export function PlanPage() {
             const currentPlan = modifiedPlan || plan
             const isModified = !!modifiedPlan
             const shoppingItemsCount = getShoppingItemsCount(currentPlan)
+            // 检查是否是昨天或今天的计划
+            const isYesterdayOrToday = plan.date === yesterdayStr || plan.date === todayStr
 
             return (
-              <Card key={plan.id} className="shadow-sm">
+              <Card key={plan.id} className="shadow-sm relative">
                 <CardContent className="px-3 pt-2 pb-3 sm:px-3.5 sm:pb-3.5">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="font-medium min-w-0 text-sm sm:text-base">
@@ -281,7 +395,7 @@ export function PlanPage() {
                   {currentPlan.breakfast_recipe_id && (
                     <div className="flex items-center py-2 border-b border-border">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">🍽️</span>
+                        <span className="text-lg">{getBreakfastEmojiById(currentPlan.breakfast_recipe_id, breakfastRecipes)}</span>
                         <span className="text-sm">
                           早餐: {recipes.find(r => r.id === currentPlan.breakfast_recipe_id)?.name || '未知早餐'}
                         </span>
@@ -331,6 +445,20 @@ export function PlanPage() {
                     已关联采购清单项: {shoppingItemsCount}项
                   </div>
                 </CardContent>
+                
+                {/* 完成计划按钮 */}
+                {isYesterdayOrToday && (
+                  <div className="absolute bottom-3 right-3">
+                    <Button
+                      size="sm"
+                      className="text-xs h-7 px-2 bg-[#E6F4E9] hover:bg-[#E6F4E9]/90 text-green-700"
+                      onClick={() => setCompleteConfirm(plan.id)}
+                      disabled={isCompleting}
+                    >
+                      完成计划
+                    </Button>
+                  </div>
+                )}
               </Card>
             )
           })
@@ -432,6 +560,49 @@ export function PlanPage() {
         message="近三天都已做好规划，请删除计划再新建"
         onConfirm={() => setShowAllPlannedError(false)}
         onCancel={() => setShowAllPlannedError(false)}
+        showCancelButton={false}
+      />
+      
+      {/* 完成计划确认框 */}
+      <ConfirmModal
+        isOpen={!!completeConfirm}
+        title="完成计划"
+        message="确定已完成该计划吗？系统将扣减对应食材库存，并从采购清单中移除相关需求。"
+        confirmText="确定"
+        cancelText="取消"
+        onConfirm={() => {
+          if (completeConfirm) void handleCompletePlan(completeConfirm)
+        }}
+        onCancel={() => setCompleteConfirm(null)}
+      />
+      
+      {/* 完成计划时的遮罩层 */}
+      {isCompleting && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm text-white">完成计划中...</span>
+          </div>
+        </div>
+      )}
+      
+      {/* 完成计划成功提示 */}
+      <ConfirmModal
+        isOpen={showCompleteSuccess}
+        title="完成成功"
+        message="计划已完成，库存已更新"
+        onConfirm={() => setShowCompleteSuccess(false)}
+        onCancel={() => setShowCompleteSuccess(false)}
+        showCancelButton={false}
+      />
+      
+      {/* 完成计划失败提示 */}
+      <ConfirmModal
+        isOpen={showCompleteError}
+        title="完成失败"
+        message="操作失败，请重试"
+        onConfirm={() => setShowCompleteError(false)}
+        onCancel={() => setShowCompleteError(false)}
         showCancelButton={false}
       />
     </div>
