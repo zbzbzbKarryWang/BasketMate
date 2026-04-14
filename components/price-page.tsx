@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
-import { Plus, TrendingDown, Upload, X, Store, Save } from "lucide-react"
+import { Plus, TrendingDown, Upload, X, Store, Save, Search } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -67,6 +67,7 @@ export function PricePage() {
   const [showUploadError, setShowUploadError] = useState(false)
   const [showSaveError, setShowSaveError] = useState(false)
   const [showAddPriceError, setShowAddPriceError] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const allStores = useMemo(() => {
@@ -76,6 +77,14 @@ export function PricePage() {
   const allIngredients = useMemo(() => {
     return [...new Set(priceList.map((item) => item.ingredient))]
   }, [priceList])
+
+  const filteredIngredients = useMemo(() => {
+    if (!searchQuery) return allIngredients
+    const query = searchQuery.toLowerCase().trim()
+    return allIngredients.filter(ingredient => 
+      ingredient.toLowerCase().includes(query)
+    )
+  }, [allIngredients, searchQuery])
 
   // 初始化 prices 状态
   useEffect(() => {
@@ -377,10 +386,24 @@ export function PricePage() {
       </header>
 
       <main className="flex-1 px-4 py-4">
-        {allIngredients.length === 0 ? (
+        {/* 搜索框 */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="搜索食材..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-white border-border shadow-sm"
+            />
+          </div>
+        </div>
+
+        {filteredIngredients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <TrendingDown className="w-12 h-12 mb-3 opacity-50" />
-            <p className="text-sm">暂无价格数据</p>
+            <p className="text-sm">{searchQuery ? '没有找到匹配的食材' : '暂无价格数据'}</p>
             <Button
               variant="link"
               onClick={() => setIsModalOpen(true)}
@@ -410,7 +433,7 @@ export function PricePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {allIngredients.map((ingredient) => {
+                    {filteredIngredients.map((ingredient) => {
                       const lowestPrice = getLowestPrice(ingredient)
 
                       return (

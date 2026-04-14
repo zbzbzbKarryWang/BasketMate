@@ -9,6 +9,7 @@ import { useData } from '@/contexts/DataContext'
 import type { Recipe } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { getCategoryLabel } from '@/lib/recipe-categories'
+import { ingredientStockOk } from '@/lib/ingredient-stock'
 
 interface RecipeDrawerProps {
   isOpen: boolean
@@ -23,7 +24,7 @@ export function RecipeDrawer({
   onConfirm,
   initialSelected = [],
 }: RecipeDrawerProps) {
-  const { recipes } = useData()
+  const { recipes, inventory } = useData()
   const navigateToRecipeAdd = useAppStore((s) => s.navigateToRecipeAdd)
 
   const [search, setSearch] = useState('')
@@ -110,11 +111,18 @@ export function RecipeDrawer({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium text-sm">{recipe.name}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="text-xs mt-0.5">
                     {getCategoryLabel(recipe.category)} ·{' '}
-                    {recipe.ingredients
-                      .map((i) => `${i.name} ${Math.max(1, Math.floor(i.quantity))}`)
-                      .join('、')}
+                    {recipe.ingredients.map((i, index) => (
+                      <span key={index} className={cn(
+                        ingredientStockOk(inventory, i) 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      )}>
+                        {i.name} {Math.max(1, Math.floor(i.quantity))}
+                        {index < recipe.ingredients.length - 1 && '、'}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <div
