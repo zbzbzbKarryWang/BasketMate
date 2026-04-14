@@ -1,0 +1,10 @@
+ <ConfirmModal
+        isOpen={showBreakfastConfirm}
+        title="确认早餐"
+        message={`早餐为：${pendingBreakfastId ? recipes.find(r => r.id === pendingBreakfastId)?.name : ""}`}
+        onConfirm={confirmBreakfast}
+        onCancel={() => {
+          setShowBreakfastConfirm(false)
+          setPendingBreakfastId(null)
+        }}
+      />

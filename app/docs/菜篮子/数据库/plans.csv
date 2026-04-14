@@ -1,0 +1,4 @@
+?column?
+"INSERT INTO plans (id, date, breakfast_recipe_id, meal_ids) VALUES ('48e3a100-01dc-41f8-9698-c816d1afb447', '2026-04-14', 'a8d298f8-18da-44b4-9d8d-a98802aaf8fd', '{414b2dde-0c22-4283-ba7c-a1d3918f283e,3ceb9148-990e-4c3c-bcba-d24bd208e6f7}'::uuid[]);"
+"INSERT INTO plans (id, date, breakfast_recipe_id, meal_ids) VALUES ('fc84e7d7-8728-4f37-93aa-2468b654fd8c', '2026-04-15', 'a8d298f8-18da-44b4-9d8d-a98802aaf8fd', '{a8d298f8-18da-44b4-9d8d-a98802aaf8fd,414b2dde-0c22-4283-ba7c-a1d3918f283e}'::uuid[]);"
+"INSERT INTO plans (id, date, breakfast_recipe_id, meal_ids) VALUES ('a0fef360-358a-44af-bdaf-e652f4d3efd1', '2026-04-16', 'a8d298f8-18da-44b4-9d8d-a98802aaf8fd', '{cd245d19-b600-4978-a28d-1963dfc8b378}'::uuid[]);"

@@ -1,0 +1,58 @@
+清除命令：
+TRUNCATE TABLE purchase_tasks, plans, prices, recipes, ingredients, shops CASCADE;
+
+导入：Supabase 的 Import CSV 功能
+
+备份命令：
+-- 1. 备份食材表
+SELECT 'INSERT INTO ingredients (id, name, unit, quantity, added_at) VALUES ('
+  || quote_literal(id) || ', '
+  || quote_literal(name) || ', '
+  || quote_literal(unit) || ', '
+  || quantity || ', '
+  || quote_literal(added_at) || ');'
+FROM ingredients;
+
+-- 2. 备份店铺表
+SELECT 'INSERT INTO shops (id, name, address, notes, created_at) VALUES ('
+  || quote_literal(id) || ', '
+  || quote_literal(name) || ', '
+  || COALESCE(quote_literal(address), 'NULL') || ', '
+  || COALESCE(quote_literal(notes), 'NULL') || ', '
+  || quote_literal(created_at) || ');'
+FROM shops;
+
+-- 3. 备份价格表
+SELECT 'INSERT INTO prices (id, ingredient_id, shop_id, price) VALUES ('
+  || quote_literal(id) || ', '
+  || quote_literal(ingredient_id) || ', '
+  || quote_literal(shop_id) || ', '
+  || price || ');'
+FROM prices;
+
+-- 4. 备份菜谱表（注意 ingredients 字段是 JSONB）
+SELECT 'INSERT INTO recipes (id, name, category, ingredients) VALUES ('
+  || quote_literal(id) || ', '
+  || quote_literal(name) || ', '
+  || quote_literal(category) || ', '
+  || quote_literal(ingredients::text) || '::jsonb);'
+FROM recipes;
+
+-- 5. 备份计划表
+SELECT 'INSERT INTO plans (id, date, breakfast_recipe_id, meal_ids) VALUES ('
+  || quote_literal(id) || ', '
+  || quote_literal(date) || ', '
+  || COALESCE(quote_literal(breakfast_recipe_id), 'NULL') || ', '
+  || COALESCE(quote_literal(meal_ids::text), 'NULL') || '::uuid[]);'
+FROM plans;
+
+-- 6. 备份采购任务表
+SELECT 'INSERT INTO purchase_tasks (id, status, created_at, completed_at, pending_items, custom_items, removed_ingredient_ids) VALUES ('
+  || quote_literal(id) || ', '
+  || quote_literal(status) || ', '
+  || quote_literal(created_at) || ', '
+  || COALESCE(quote_literal(completed_at), 'NULL') || ', '
+  || quote_literal(pending_items::text) || '::jsonb, '
+  || quote_literal(custom_items::text) || '::jsonb, '
+  || quote_literal(removed_ingredient_ids::text) || '::uuid[]);'
+FROM purchase_tasks;

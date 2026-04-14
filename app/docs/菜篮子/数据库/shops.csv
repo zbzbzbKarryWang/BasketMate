@@ -1,0 +1,4 @@
+?column?
+"INSERT INTO shops (id, name, address, notes, created_at) VALUES ('504efbee-1d7c-425f-869e-730fb09b6de5', '盒马鲜生', NULL, NULL, '2026-04-13 20:58:14.258492+00');"
+"INSERT INTO shops (id, name, address, notes, created_at) VALUES ('665dc568-566c-438e-8c86-53b02310804c', '菜市场', NULL, NULL, '2026-04-13 20:58:14.258492+00');"
+"INSERT INTO shops (id, name, address, notes, created_at) VALUES ('c5b5da88-64d3-4873-8ef4-737d92c9cb2a', '永辉超市', NULL, NULL, '2026-04-13 20:58:14.258492+00');"

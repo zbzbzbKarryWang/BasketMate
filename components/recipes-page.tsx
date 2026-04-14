@@ -1,0 +1,317 @@
+"use client"
+
+import { useEffect, useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { LoadingButton } from '@/components/ui/loading-button'
+import { Card, CardContent } from '@/components/ui/card'
+import { RecipeFormDialog, type RecipeFormValues } from '@/components/recipe-form-dialog'
+import { ConfirmModal } from '@/components/confirm-modal'
+import { useAppStore } from '@/lib/store'
+import { useData } from '@/contexts/DataContext'
+import type { Recipe } from '@/lib/types'
+import { cn } from '@/lib/utils'
+import { normalizeRecipeCategory, getCategoryLabel } from '@/lib/recipe-categories'
+
+/** 菜谱卡片跳色用浅绿底 */
+const RECIPE_ALT_BG = "#E1EEE1"
+
+function stockSummary(need: number, invQty: number | undefined) {
+  const stock = invQty ?? 0
+  const ok = stock >= need
+  return { text: `需要${need}个/库存${stock}个`, ok }
+}
+
+export function RecipesPage() {
+  const activeTab = useAppStore((s) => s.activeTab)
+  const pendingRecipeAdd = useAppStore((s) => s.pendingRecipeAdd)
+  const setPendingRecipeAdd = useAppStore((s) => s.setPendingRecipeAdd)
+  const {
+    recipes,
+    inventory,
+    addRecipe,
+    updateRecipe,
+    deleteRecipe,
+    addIngredient,
+    recalculateAndPersistPurchaseTask,
+  } = useData()
+  const [formOpen, setFormOpen] = useState(false)
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add')
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [showDeleteLoading, setShowDeleteLoading] = useState(false)
+
+  useEffect(() => {
+    if (activeTab === 'recipes' && pendingRecipeAdd) {
+      setFormMode('add')
+      setEditingRecipe(null)
+      setFormOpen(true)
+      setPendingRecipeAdd(false)
+    }
+  }, [activeTab, pendingRecipeAdd, setPendingRecipeAdd])
+
+  const invByName = useMemo(() => {
+    const m = new Map<string, number>()
+    inventory.forEach((i) => m.set(i.name, i.quantity))
+    return m
+  }, [inventory])
+
+  const ensureIngredientsExist = async (values: RecipeFormValues) => {
+    const seen = new Set<string>()
+    for (const ing of values.ingredients) {
+      const key = ing.name.trim()
+      if (!key || seen.has(key)) continue
+      seen.add(key)
+      const exists = inventory.some((i) => i.name === key)
+      if (!exists) {
+        await addIngredient({ name: key, unit: '份', quantity: 0 })
+      }
+    }
+  }
+
+  const handleFormSubmit = async (values: RecipeFormValues) => {
+    setIsSubmitting(true)
+    try {
+      const normalizedCategory = normalizeRecipeCategory(values.category)
+      
+      if (formMode === 'add') {
+        // 检查菜谱名称是否已存在
+        const existingRecipe = recipes.find(recipe => recipe.name === values.name)
+        if (existingRecipe) {
+          alert('菜谱已存在，无法添加')
+          return
+        }
+        
+        await addRecipe({
+          name: values.name,
+          category: normalizedCategory,
+          ingredients: values.ingredients.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            unit: '',
+          })),
+        })
+      } else if (editingRecipe) {
+        // 检查菜谱名称是否已被其他菜谱使用
+        const existingRecipe = recipes.find(recipe => recipe.name === values.name && recipe.id !== editingRecipe.id)
+        if (existingRecipe) {
+          alert('菜谱名称已存在，无法修改')
+          return
+        }
+        
+        await updateRecipe(editingRecipe.id, {
+          name: values.name,
+          category: normalizedCategory,
+          ingredients: values.ingredients.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            unit: '',
+          })),
+        })
+      }
+      // 调用 recalculateAndPersistPurchaseTask() 刷新采购任务，因为菜谱的修改可能会影响计划需求
+      await recalculateAndPersistPurchaseTask()
+      setFormOpen(false)
+      setShowSuccess(true)
+    } catch (error) {
+      console.error('保存菜谱失败:', error)
+      alert('保存失败，请重试')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const openAdd = () => {
+    setFormMode('add')
+    setEditingRecipe(null)
+    setFormOpen(true)
+  }
+
+  const openEdit = (r: Recipe) => {
+    setFormMode('edit')
+    setEditingRecipe(r)
+    setFormOpen(true)
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen pb-20 max-w-full overflow-x-hidden">
+      <header className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border z-10">
+        <div className="flex items-center justify-between px-4 h-14">
+          <h1 className="font-semibold">菜谱</h1>
+          <Button size="sm" className="gap-1 shrink-0" onClick={openAdd}>
+            <Plus className="w-4 h-4" />
+            添加新菜
+          </Button>
+        </div>
+      </header>
+
+      <main className="flex-1 px-4 py-4 w-full max-w-full box-border">
+        {recipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-sm text-center">
+            暂无菜谱，点击右上角添加新菜。
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {recipes.map((recipe, index) => {
+              const isAlt = index % 2 === 1
+              return (
+                <Card
+                  key={recipe.id}
+                  className={cn(
+                    "shadow-sm overflow-hidden border",
+                    isAlt ? "border-[#c5d8c5]" : "border-border bg-card"
+                  )}
+                  style={isAlt ? { backgroundColor: RECIPE_ALT_BG } : undefined}
+                >
+                  <CardContent className="px-3 pt-1 pb-3 sm:px-3.5 sm:pb-3.5">
+                    <div
+                      className={cn(
+                        "flex items-start justify-between gap-2 min-w-0 pb-2 border-b",
+                        isAlt ? "border-[#1a2414]/12" : "border-border"
+                      )}
+                    >
+                      <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <h3
+                          className={cn(
+                            "text-lg font-semibold leading-snug",
+                            isAlt ? "text-[#1a2414]" : "text-foreground"
+                          )}
+                        >
+                          {recipe.name}
+                        </h3>
+                        <span
+                          className={cn(
+                            "text-[10px] leading-none shrink-0 px-2 py-0.5 rounded-full",
+                            isAlt ? "bg-[#c5d8c5] text-[#3d4f38]" : "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {getCategoryLabel(recipe.category)}
+                        </span>
+                      </div>
+                      <div
+                        className={cn(
+                          "flex items-center gap-2.5 shrink-0 text-xs",
+                          isAlt ? "text-[#2a3d26]/85" : "text-muted-foreground"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          className={cn(
+                            "transition-colors",
+                            isAlt
+                              ? "hover:text-[#1a2414]"
+                              : "hover:text-foreground"
+                          )}
+                          onClick={() => openEdit(recipe)}
+                        >
+                          修改
+                        </button>
+                        <button
+                          type="button"
+                          className={cn(
+                            "transition-colors",
+                            isAlt
+                              ? "hover:text-[#1a2414]"
+                              : "hover:text-foreground"
+                          )}
+                          onClick={() => setDeleteId(recipe.id)}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 space-y-2">
+                      {recipe.ingredients.map((ing, idx) => {
+                        const need = Math.max(1, Math.floor(ing.quantity))
+                        const invQty = invByName.get(ing.name)
+                        const { text, ok } = stockSummary(need, invQty)
+                        return (
+                          <div
+                            key={idx}
+                            className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 items-center text-sm"
+                          >
+                            <span
+                              className={cn(
+                                "truncate min-w-0 font-normal",
+                                isAlt ? "text-[#1a2414]" : "text-foreground"
+                              )}
+                            >
+                              {ing.name}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-xs tabular-nums text-right whitespace-nowrap shrink-0",
+                                ok
+                                  ? isAlt
+                                    ? "text-emerald-800"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                  : isAlt
+                                    ? "text-red-700"
+                                    : "text-destructive"
+                              )}
+                            >
+                              {text}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </main>
+
+      <RecipeFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        mode={formMode}
+        initialRecipe={editingRecipe}
+        onSubmit={handleFormSubmit}
+        isLoading={isSubmitting}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteId}
+        title="删除菜谱"
+        message="确定删除该菜谱吗？相关计划中的引用也会被移除。"
+        confirmText="删除"
+        cancelText="取消"
+        variant="destructive"
+        isLoading={showDeleteLoading}
+        onConfirm={async () => {
+          if (deleteId) {
+            setShowDeleteLoading(true)
+            try {
+              await deleteRecipe(deleteId)
+              // 调用 recalculateAndPersistPurchaseTask() 刷新采购任务，因为删除菜谱可能会影响计划需求
+              await recalculateAndPersistPurchaseTask()
+              setShowSuccess(true)
+            } catch (error) {
+              console.error('删除菜谱失败:', error)
+              alert('删除失败，请重试')
+            } finally {
+              setShowDeleteLoading(false)
+            }
+          }
+          setDeleteId(null)
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
+
+      <ConfirmModal
+        isOpen={showSuccess}
+        title="提示"
+        message="保存成功"
+        onConfirm={() => setShowSuccess(false)}
+        onCancel={() => setShowSuccess(false)}
+        showCancelButton={false}
+      />
+    </div>
+  )
+}
