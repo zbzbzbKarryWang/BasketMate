@@ -5,6 +5,7 @@ import { useData } from '@/contexts/DataContext'
 import { SpinWheel } from '@/components/SpinWheel'
 import type { BreakfastOption } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { getBreakfastEmoji } from '@/lib/breakfast-emojis'
 
 interface BreakfastPickerPanelProps {
   selectedBreakfastId: string | null
@@ -31,19 +32,12 @@ export function BreakfastPickerPanel({
     return recipes.filter(r => r.category === 'breakfast')
   }, [recipes])
   
-  // 早餐相关的emoji数组
-  const breakfastEmojis = [
-    '🍞', '🥐', '🥨', '🧀', '🥚', '🍳', '🥓', '🍖',
-    '🌭', '🍔', '🥪', '🥙', '🧆', '🌮', '🌯', '🥗',
-    '🍿', '🥘', '🍝', '🍜'
-  ]
-
   const wheelOptions = useMemo(() => {
-    // 为每个早餐食谱分配一个随机emoji
-    const recipeOptions = breakfastRecipes.map((recipe, index) => ({
+    // 为每个早餐食谱分配emoji
+    const recipeOptions = breakfastRecipes.map((recipe) => ({
       id: recipe.id,
       name: recipe.name,
-      emoji: breakfastEmojis[index % breakfastEmojis.length]
+      emoji: getBreakfastEmoji(recipe.name, breakfastRecipes)
     }))
     const allOptions = [...recipeOptions, ...wheelExtras]
     return allOptions.filter(option => !wheelHiddenIds.includes(option.id))
@@ -58,7 +52,7 @@ export function BreakfastPickerPanel({
       <div>
         <p className="text-xs text-muted-foreground mb-2">点选早餐</p>
         <div className="flex flex-wrap gap-2">
-          {breakfastRecipes.map((recipe, index) => (
+          {breakfastRecipes.map((recipe) => (
             <button
               key={recipe.id}
               type="button"
@@ -70,7 +64,7 @@ export function BreakfastPickerPanel({
                   : "border-border bg-muted/40 hover:bg-muted"
               )}
             >
-              {breakfastEmojis[index % breakfastEmojis.length]} {recipe.name}
+              {getBreakfastEmoji(recipe.name, breakfastRecipes)} {recipe.name}
             </button>
           ))}
         </div>

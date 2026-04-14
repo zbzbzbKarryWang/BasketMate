@@ -226,10 +226,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     await refresh()
   }, [refresh])
 
-  const updateIngredient = useCallback(async (id: string, quantity: number) => {
+  const updateIngredient = useCallback(async (id: string, quantity: number, additionalData?: Partial<{ name: string; addedAt: Date }>) => {
+    const updateData: Record<string, any> = { quantity }
+    if (additionalData) {
+      if (additionalData.name) updateData.name = additionalData.name
+      if (additionalData.addedAt) updateData.added_at = additionalData.addedAt.toISOString()
+    }
     const { error } = await supabase
       .from("ingredients")
-      .update({ quantity })
+      .update(updateData)
       .eq("id", id)
     if (error) throw error
     await refresh()

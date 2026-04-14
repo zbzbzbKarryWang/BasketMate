@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { CalendarDays, ShoppingCart, Utensils, Package } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAppStore } from '@/lib/store'
@@ -8,6 +8,7 @@ import { useData } from '@/contexts/DataContext'
 import { formatDate, getTodayString, getTomorrowString, getDayAfterTomorrowString } from '@/lib/mock-data'
 import { ingredientStockOk } from '@/lib/ingredient-stock'
 import { ConfirmModal } from '@/components/confirm-modal'
+import { getBreakfastEmojiById } from '@/lib/breakfast-emojis'
 
 export function HomePage() {
   const { mealPlans, inventory, recipes, activePurchaseTask, error, connectionStatus } = useData()
@@ -18,6 +19,11 @@ export function HomePage() {
   const tomorrow = getTomorrowString()
   const dayAfterTomorrow = getDayAfterTomorrowString()
   const todayPlan = mealPlans.find(p => p.date === today)
+  
+  // 早餐食谱
+  const breakfastRecipes = useMemo(() => {
+    return recipes.filter(r => r.category === 'breakfast')
+  }, [recipes])
   
   // 计算是否有需购买项
   const hasShoppingItems = (activePurchaseTask?.pending_items?.length ?? 0) > 0 || (activePurchaseTask?.custom_items?.length ?? 0) > 0
@@ -86,7 +92,7 @@ export function HomePage() {
                 {/* 早餐 */}
                 {todayPlan.breakfast_recipe_id && (
                   <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                    <span className="text-2xl">🍽️</span>
+                    <span className="text-2xl">{getBreakfastEmojiById(todayPlan.breakfast_recipe_id, breakfastRecipes)}</span>
                     <div>
                       <div className="text-xs text-muted-foreground">早餐</div>
                       <div className="font-medium">{recipes.find(r => r.id === todayPlan.breakfast_recipe_id)?.name || '未知早餐'}</div>
