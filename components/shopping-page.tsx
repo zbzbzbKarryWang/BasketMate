@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Plus, Check, ShoppingCart, ChevronDown, ChevronUp } from "lucide-react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { Plus, Check, ShoppingCart, ChevronDown, ChevronUp, Upload } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -30,6 +30,8 @@ export function ShoppingPage() {
     addToPurchaseTask,
     completePurchase,
     clearPurchaseTask,
+    addIngredient,
+    updateIngredient,
   } = useData()
 
   const [showRecipeDrawer, setShowRecipeDrawer] = useState(false)
@@ -50,6 +52,70 @@ export function ShoppingPage() {
   const [showClearSuccess, setShowClearSuccess] = useState(false)
   const [showClearError, setShowClearError] = useState(false)
   const [showAddItemSuccess, setShowAddItemSuccess] = useState(false)
+  const [showImportResult, setShowImportResult] = useState(false)
+  const [importResult, setImportResult] = useState({ success: 0, failed: 0 })
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleCsvUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      return
+    }
+    
+    setUploading(true)
+    try {
+      const text = await file.text()
+      const lines = text.split(/\r?\n/).filter(line => line.trim())
+      
+      if (lines.length < 2) {
+        return
+      }
+      
+      let successCount = 0
+      let errorCount = 0
+      
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',').map(p => p.trim())
+        if (parts.length < 2) continue
+        
+        const name = parts[0]
+        const quantity = parseFloat(parts[1])
+        
+        if (!name || isNaN(quantity)) {
+          errorCount++
+          continue
+        }
+        
+        try {
+          const existingItem = inventory.find(item => 
+            item.name.toLowerCase() === name.toLowerCase()
+          )
+          
+          if (existingItem) {
+            await updateIngredient(existingItem.id, existingItem.quantity + quantity, { addedAt: new Date() })
+          } else {
+            await addIngredient({ name, quantity })
+          }
+          successCount++
+        } catch {
+          errorCount++
+        }
+      }
+      
+      setImportResult({ success: successCount, failed: errorCount })
+      setShowImportResult(true)
+    } catch (err) {
+      console.error('CSV upload error:', err)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }, [inventory, addIngredient, updateIngredient])
 
   useEffect(() => {
     if (activePurchaseTask) {
@@ -263,7 +329,7 @@ export function ShoppingPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {saving && (
+      {(saving || uploading) && (
         <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-lg">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -276,6 +342,23 @@ export function ShoppingPage() {
         <div className="flex items-center justify-between h-14 px-4 gap-2">
           <h1 className="text-lg font-semibold shrink-0">采购清单</h1>
           <div className="flex items-center gap-1.5 shrink-0">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleCsvUpload}
+              className="hidden"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="gap-1 px-2"
+            >
+              <Upload className="w-4 h-4" />
+              {uploading ? '导入中' : '导入'}
+            </Button>
             <Button
               size="sm"
               variant="outline"
@@ -302,7 +385,7 @@ export function ShoppingPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 pb-24 space-y-4">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-48 space-y-4">
         {listEmpty ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <ShoppingCart className="w-12 h-12 mb-3 opacity-50" />
@@ -599,6 +682,15 @@ export function ShoppingPage() {
         message="物品已添加"
         onConfirm={() => setShowAddItemSuccess(false)}
         onCancel={() => setShowAddItemSuccess(false)}
+        showCancelButton={false}
+      />
+
+      <ConfirmModal
+        isOpen={showImportResult}
+        title="导入结果"
+        message={`导入成功：${importResult.success} 项\n导入失败：${importResult.failed} 项`}
+        onConfirm={() => setShowImportResult(false)}
+        onCancel={() => setShowImportResult(false)}
         showCancelButton={false}
       />
     </div>

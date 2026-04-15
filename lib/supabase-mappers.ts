@@ -3,6 +3,7 @@ import type { BreakfastOption, InventoryItem, MealPlan, PriceItem, Recipe, Shopp
 export type IngredientRow = {
   id: string
   name: string
+  alias: string | null
   unit: string
   quantity: number
   added_at: string
@@ -21,6 +22,7 @@ export type RecipeRow = {
   name: string
   category: string
   ingredients: unknown
+  notes: string | null
 }
 
 export type PlanRow = {
@@ -64,6 +66,7 @@ export function rowToInventoryItem(row: IngredientRow): InventoryItem {
   return {
     id: row.id,
     name: row.name,
+    alias: row.alias ?? undefined,
     quantity: row.quantity,
     unit: row.unit,
     addedAt: new Date(row.added_at),
@@ -101,6 +104,7 @@ export function rowToRecipe(
         quantity: r.quantity,
         unit: unitByIngredientId.get(r.ingredient_id) ?? '份',
       })),
+    notes: row.notes ?? undefined,
   }
 }
 

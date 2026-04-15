@@ -10,9 +10,20 @@ import { RecipeDrawer } from '@/components/recipe-drawer'
 import { ConfirmModal } from '@/components/confirm-modal'
 import { useData } from '@/contexts/DataContext'
 import { formatDate, getRelativeDay, getTodayString, getTomorrowString } from '@/lib/mock-data'
-import type { Recipe, BreakfastOption, MealPlan } from '@/lib/types'
+import type { Recipe, BreakfastOption, MealPlan, InventoryItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { ingredientStockOk } from '@/lib/ingredient-stock'
+
+function findInventoryItem(inventory: InventoryItem[], name: string): InventoryItem | undefined {
+  return inventory.find(item => {
+    if (item.name.toLowerCase() === name.toLowerCase()) return true
+    if (item.alias) {
+      const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+      return aliases.some(alias => alias.toLowerCase() === name.toLowerCase())
+    }
+    return false
+  })
+}
 
 interface MealPlannerProps {
   targetDate: string
@@ -22,6 +33,14 @@ interface MealPlannerProps {
 
 export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProps) {
   const { recipes, inventory, mealPlans, addPlan, updatePlan, recalculateAndPersistPurchaseTask } = useData()
+
+  const formatIngredientName = (name: string) => {
+    const item = findInventoryItem(inventory, name)
+    if (!item?.alias) return name
+    const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+    if (aliases.length === 0) return name
+    return `${name}（${aliases.join('、')}）`
+  }
 
   const [selectedBreakfastId, setSelectedBreakfastId] = useState<string | null>(
     editingPlan?.breakfast_recipe_id || null
@@ -113,9 +132,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
     if (randomRecipeOption === 'sufficient') {
       filtered = filtered.filter(recipe => {
         return recipe.ingredients.every(ing => {
-          const inventoryItem = inventory.find(
-            item => item.name.toLowerCase() === ing.name.toLowerCase()
-          )
+          const inventoryItem = findInventoryItem(inventory, ing.name)
           return inventoryItem && inventoryItem.quantity >= ing.quantity
         })
       })
@@ -249,9 +266,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
       .filter(recipe => recipe.category === 'meal') // 只显示正餐类别
       .map((recipe) => {
         const matchingIngredients = recipe.ingredients.filter((ing) => {
-          const inventoryItem = inventory.find(
-            (item) => item.name.toLowerCase() === ing.name.toLowerCase()
-          )
+          const inventoryItem = findInventoryItem(inventory, ing.name)
           return inventoryItem && inventoryItem.quantity > 0
         })
 
@@ -311,7 +326,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-12">
         <div className="flex flex-col gap-4">
           {/* 日期选择卡片 */}
           <Card className="shadow-sm gap-0">
@@ -385,9 +400,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
                 <div className="space-y-2">
                   {recommendedRecipes.map(({ recipe }) => {
                     const availableIngredients = recipe.ingredients.filter((ing) => {
-                      const inventoryItem = inventory.find(
-                        (item) => item.name.toLowerCase() === ing.name.toLowerCase()
-                      )
+                      const inventoryItem = findInventoryItem(inventory, ing.name)
                       return inventoryItem && inventoryItem.quantity > 0
                     }).length
                     const totalIngredients = recipe.ingredients.length
@@ -408,7 +421,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-sm">{recipe.name}</div>
                             <div className="text-xs text-muted-foreground mt-1 truncate">
-                              {recipe.ingredients.map((i) => i.name).join(" · ")}
+                              {recipe.ingredients.map((i) => formatIngredientName(i.name)).join(" · ")}
                             </div>
                             <div className="text-xs text-green-600 mt-1">
                               已有 {availableIngredients}/{totalIngredients} 种食材

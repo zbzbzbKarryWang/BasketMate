@@ -17,13 +17,33 @@ import {
   getTodayString,
   getTomorrowString,
 } from '@/lib/mock-data'
-import type { MealPlan, Recipe, BreakfastOption } from '@/lib/types'
+import type { MealPlan, Recipe, BreakfastOption, InventoryItem } from '@/lib/types'
+
+function findInventoryItemByName(inventory: InventoryItem[], name: string): InventoryItem | undefined {
+  const targetName = name.trim().toLowerCase()
+  return inventory.find(item => {
+    if (item.name.trim().toLowerCase() === targetName) return true
+    if (item.alias) {
+      const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+      return aliases.some(alias => alias.trim().toLowerCase() === targetName)
+    }
+    return false
+  })
+}
 import { ingredientStockOk } from '@/lib/ingredient-stock'
 import { getBreakfastEmojiById } from '@/lib/breakfast-emojis'
 
 export function PlanPage() {
   const { mealPlans, inventory, recipes, activePurchaseTask, deletePlan, updatePlan, updateIngredient, recalculateAndPersistPurchaseTask, refresh } = useData()
   const { showNewPlan, setShowNewPlan } = useAppStore()
+
+  const formatIngredientName = (name: string) => {
+    const item = findInventoryItemByName(inventory, name)
+    if (!item?.alias) return name
+    const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+    if (aliases.length === 0) return name
+    return `${name}（${aliases.join('、')}）`
+  }
 
   const [showPlanner, setShowPlanner] = useState(false)
   const [plannerDate, setPlannerDate] = useState<string | undefined>()
@@ -145,7 +165,7 @@ export function PlanPage() {
       const breakfastRecipe = recipes.find(r => r.id === plan.breakfast_recipe_id)
       if (breakfastRecipe) {
         breakfastRecipe.ingredients.forEach(ing => {
-          const invItem = inventory.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+          const invItem = findInventoryItemByName(inventory, ing.name)
           if (invItem) {
             planIngredientIds.add(invItem.id)
           }
@@ -154,7 +174,7 @@ export function PlanPage() {
     }
     plan.recipes.forEach(recipe => {
       recipe.ingredients.forEach(ing => {
-        const invItem = inventory.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+        const invItem = findInventoryItemByName(inventory, ing.name)
         if (invItem) {
           planIngredientIds.add(invItem.id)
         }
@@ -244,7 +264,7 @@ export function PlanPage() {
         const breakfastRecipe = recipes.find(r => r.id === plan.breakfast_recipe_id)
         if (breakfastRecipe) {
           breakfastRecipe.ingredients.forEach(ing => {
-            const invItem = inventory.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+            const invItem = findInventoryItemByName(inventory, ing.name)
             if (invItem) {
               const currentNeed = ingredientNeeds.get(invItem.id) || 0
               ingredientNeeds.set(invItem.id, currentNeed + ing.quantity)
@@ -256,7 +276,7 @@ export function PlanPage() {
       // 处理正餐
       plan.recipes.forEach(recipe => {
         recipe.ingredients.forEach(ing => {
-          const invItem = inventory.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+          const invItem = findInventoryItemByName(inventory, ing.name)
           if (invItem) {
             const currentNeed = ingredientNeeds.get(invItem.id) || 0
             ingredientNeeds.set(invItem.id, currentNeed + ing.quantity)
@@ -341,7 +361,7 @@ export function PlanPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-12 space-y-3">
         {sortedPlans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Calendar className="w-12 h-12 mb-3 opacity-50" />
@@ -429,7 +449,7 @@ export function PlanPage() {
                                         : "text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
                                     }
                                   >
-                                    {ing.name}
+                                    {formatIngredientName(ing.name)}
                                   </span>
                                 )
                               })}

@@ -30,6 +30,21 @@ export function RecipeDrawer({
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<string[]>(initialSelected.map((r) => r.id))
 
+  const formatIngredientName = (name: string) => {
+    const item = inventory.find(i => {
+      if (i.name === name) return true
+      if (i.alias) {
+        const aliases = i.alias.split(/[、,，]/).filter(a => a.trim())
+        return aliases.includes(name)
+      }
+      return false
+    })
+    if (!item?.alias) return name
+    const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+    if (aliases.length === 0) return name
+    return `${name}（${aliases.join('、')}）`
+  }
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -121,7 +136,7 @@ export function RecipeDrawer({
                           ? 'text-green-600' 
                           : 'text-red-600'
                       )}>
-                        {i.name} {Math.max(1, Math.floor(i.quantity))}
+                        {formatIngredientName(i.name)} {Math.max(1, Math.floor(i.quantity))}
                         {index < recipe.ingredients.length - 1 && '、'}
                       </span>
                     ))}

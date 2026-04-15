@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { ArrowUpDown, Save, Package, ChefHat, ShoppingCart, Search, Plus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,7 @@ export function InventoryPage() {
   const [showAddIngredientModal, setShowAddIngredientModal] = useState(false)
   const [newIngredientName, setNewIngredientName] = useState('')
   const [newIngredientQuantity, setNewIngredientQuantity] = useState(0)
+  const [newIngredientAlias, setNewIngredientAlias] = useState('')
   const [showAddSuccess, setShowAddSuccess] = useState(false)
   const [showAddError, setShowAddError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -39,7 +40,9 @@ export function InventoryPage() {
   const [showEditIngredientModal, setShowEditIngredientModal] = useState(false)
   const [editingIngredient, setEditingIngredient] = useState<any>(null)
   const [editIngredientName, setEditIngredientName] = useState('')
+  const [editIngredientAlias, setEditIngredientAlias] = useState('')
   const [editIngredientDate, setEditIngredientDate] = useState('')
+  const mainRef = useRef<HTMLDivElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [showEditSuccess, setShowEditSuccess] = useState(false)
   const [showEditError, setShowEditError] = useState(false)
@@ -66,11 +69,31 @@ export function InventoryPage() {
     }
   })
 
+  const formatIngredientName = (name: string, alias?: string) => {
+    if (!alias) return name
+    const aliases = alias.split(/[、,，]/).filter(a => a.trim())
+    if (aliases.length === 0) return name
+    return `${name}（${aliases.join('、')}）`
+  }
+
+  const findInventoryItemByName = (name: string) => {
+    const targetName = name.toLowerCase()
+    return inventory.find(item => {
+      if (item.name.toLowerCase() === targetName) return true
+      if (item.alias) {
+        const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+        return aliases.some(alias => alias.toLowerCase() === targetName)
+      }
+      return false
+    })
+  }
+
   const filteredInventory = useMemo(() => {
     if (!searchQuery) return sortedInventory
     const query = searchQuery.toLowerCase().trim()
     return sortedInventory.filter(item => 
-      item.name.toLowerCase().includes(query)
+      item.name.toLowerCase().includes(query) || 
+      (item.alias && item.alias.toLowerCase().includes(query))
     )
   }, [sortedInventory, searchQuery])
 
@@ -81,6 +104,13 @@ export function InventoryPage() {
     inventory.forEach(item => {
       if (item.quantity > 0) {
         inventoryMap.set(item.name.toLowerCase(), item.quantity)
+        // 同时添加别名到映射
+        if (item.alias) {
+          const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+          aliases.forEach(alias => {
+            inventoryMap.set(alias.toLowerCase(), item.quantity)
+          })
+        }
       }
     })
     
@@ -262,12 +292,13 @@ export function InventoryPage() {
       await addIngredient({
         name: newIngredientName.trim(),
         quantity: newIngredientQuantity,
-        addedAt: new Date()
+        alias: newIngredientAlias.trim() || undefined,
       })
       
       // 重置表单
       setNewIngredientName('')
       setNewIngredientQuantity(0)
+      setNewIngredientAlias('')
       setShowAddIngredientModal(false)
       setShowAddSuccess(true)
       setShowIngredientSuggestions(false)
@@ -284,6 +315,7 @@ export function InventoryPage() {
   const handleEditIngredient = (item: typeof inventory[0]) => {
     setEditingIngredient(item)
     setEditIngredientName(item.name)
+    setEditIngredientAlias(item.alias || '')
     // 格式化日期为 YYYY-MM-DD 格式
     const date = new Date(item.addedAt)
     const year = date.getFullYear()
@@ -317,12 +349,14 @@ export function InventoryPage() {
       // 更新食材
       await updateIngredient(editingIngredient.id, quantities[editingIngredient.id] || editingIngredient.quantity, {
         name: editIngredientName.trim(),
+        alias: editIngredientAlias.trim() || undefined,
         addedAt: new Date(editIngredientDate)
       })
       
       // 重置表单
       setEditingIngredient(null)
       setEditIngredientName('')
+      setEditIngredientAlias('')
       setEditIngredientDate('')
       setShowEditIngredientModal(false)
       setShowEditSuccess(true)
@@ -367,7 +401,7 @@ export function InventoryPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4">
+      <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-40">
         {/* 搜索框 */}
         <div className="mb-4">
           <div className="relative">
@@ -407,7 +441,7 @@ export function InventoryPage() {
                       key={item.id}
                       className="flex items-center px-4 py-3"
                     >
-                      <div className="flex-1 text-sm font-medium min-w-0">{item.name}</div>
+                      <div className="flex-1 text-sm font-medium min-w-0">{formatIngredientName(item.name, item.alias)}</div>
                       
                       {/* 数量控制 */}
                       <div className="w-32 flex items-center justify-center gap-0.5 tabular-nums shrink-0">
@@ -506,7 +540,7 @@ export function InventoryPage() {
             <div className="grid grid-cols-2 gap-3">
               {recommendedRecipes.map(recipe => {
                 const availableIngredients = recipe.ingredients.filter(ing => {
-                  const inventoryItem = inventory.find(item => item.name.toLowerCase() === ing.name.toLowerCase())
+                  const inventoryItem = findInventoryItemByName(ing.name)
                   return inventoryItem && inventoryItem.quantity >= ing.quantity
                 }).length
                 const totalIngredients = recipe.ingredients.length
@@ -523,7 +557,7 @@ export function InventoryPage() {
                       <div className="font-bold text-base mb-1">{recipe.name}</div>
                       <div className="flex flex-wrap gap-1 mb-2">
                         {recipe.ingredients.map((ing, idx) => {
-                          const inventoryItem = inventory.find(item => item.name.toLowerCase() === ing.name.toLowerCase())
+                          const inventoryItem = findInventoryItemByName(ing.name)
                           const ok = inventoryItem && inventoryItem.quantity >= ing.quantity
                           return (
                             <span
@@ -558,7 +592,7 @@ export function InventoryPage() {
 
       {/* 回到顶部按钮 */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed bottom-35 right-6 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
         aria-label="回到顶部"
       >
@@ -704,6 +738,15 @@ export function InventoryPage() {
                 placeholder="0"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">别名 <span className="text-xs text-muted-foreground font-normal">（多个用顿号分隔，如：番茄、柿子）</span></label>
+              <Input
+                type="text"
+                value={newIngredientAlias}
+                onChange={(e) => setNewIngredientAlias(e.target.value)}
+                placeholder="可选"
+              />
+            </div>
             <div className="flex gap-3 mt-6">
               <Button 
                 variant="outline" 
@@ -711,6 +754,7 @@ export function InventoryPage() {
                   setShowAddIngredientModal(false)
                   setNewIngredientName('')
                   setNewIngredientQuantity(0)
+                  setNewIngredientAlias('')
                 }}
                 className="flex-1"
                 disabled={isAdding}
@@ -772,6 +816,15 @@ export function InventoryPage() {
                 onChange={(e) => setEditIngredientDate(e.target.value)}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">别名 <span className="text-xs text-muted-foreground font-normal">（多个用顿号分隔，如：番茄、柿子）</span></label>
+              <Input
+                type="text"
+                value={editIngredientAlias}
+                onChange={(e) => setEditIngredientAlias(e.target.value)}
+                placeholder="可选"
+              />
+            </div>
             <div className="flex gap-3 mt-6">
               <Button 
                 variant="outline" 
@@ -779,6 +832,7 @@ export function InventoryPage() {
                   setShowEditIngredientModal(false)
                   setEditingIngredient(null)
                   setEditIngredientName('')
+                  setEditIngredientAlias('')
                   setEditIngredientDate('')
                 }}
                 className="flex-1"

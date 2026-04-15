@@ -10,6 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ConfirmModal } from "@/components/confirm-modal"
 import { useData } from "@/contexts/DataContext"
 import { supabase } from "@/lib/supabaseClient"
+import type { InventoryItem } from "@/lib/types"
+
+function findIngredientByName(inventory: InventoryItem[], name: string): InventoryItem | undefined {
+  return inventory.find(item => {
+    if (item.name === name) return true
+    if (item.alias) {
+      const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+      return aliases.includes(name)
+    }
+    return false
+  })
+}
 
 async function upsertPriceRow(
   ingredientId: string,
@@ -69,6 +81,7 @@ export function PricePage() {
   const [showAddPriceError, setShowAddPriceError] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
 
   const allStores = useMemo(() => {
     // 计算每个店铺的价格数量
@@ -314,7 +327,7 @@ export function PricePage() {
         for (const [storeName, price] of Object.entries(storePrices)) {
           if (typeof price === 'number') {
             // 查找食材 ID
-            const ingredientId = inventory.find(item => item.name === ingredient)?.id
+            const ingredientId = findIngredientByName(inventory, ingredient)?.id
             // 查找店铺 ID
             const shop = shops.find(s => s.name === storeName)
             if (ingredientId && shop) {
@@ -351,7 +364,7 @@ export function PricePage() {
       if (!shop) return
       
       // 查找或创建食材
-      let ingredientId = inventory.find(item => item.name === selectedIngredient)?.id
+      let ingredientId = findIngredientByName(inventory, selectedIngredient)?.id
       if (!ingredientId) {
         ingredientId = await addIngredient({
           name: selectedIngredient,
@@ -395,7 +408,7 @@ export function PricePage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4">
+      <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-40">
         {/* 搜索框 */}
         <div className="mb-4">
           <div className="relative">
@@ -491,7 +504,7 @@ export function PricePage() {
 
       {/* 回到顶部按钮 */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed bottom-35 right-6 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
         aria-label="回到顶部"
       >

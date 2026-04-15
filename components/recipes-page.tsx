@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingButton } from '@/components/ui/loading-button'
@@ -47,6 +47,7 @@ export function RecipesPage() {
   const [showRecipeExistsError, setShowRecipeExistsError] = useState(false)
   const [showError, setShowError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const mainRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (activeTab === 'recipes' && pendingRecipeAdd) {
@@ -59,18 +60,50 @@ export function RecipesPage() {
 
   const invByName = useMemo(() => {
     const m = new Map<string, number>()
-    inventory.forEach((i) => m.set(i.name, i.quantity))
+    inventory.forEach((i) => {
+      m.set(i.name, i.quantity)
+      // 同时添加别名到映射
+      if (i.alias) {
+        const aliases = i.alias.split(/[、,，]/).filter(a => a.trim())
+        aliases.forEach(alias => {
+          m.set(alias, i.quantity)
+        })
+      }
+    })
     return m
   }, [inventory])
+
+  const findInventoryItemByName = (name: string) => {
+    const targetName = name.toLowerCase()
+    return inventory.find(item => {
+      if (item.name.toLowerCase() === targetName) return true
+      if (item.alias) {
+        const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+        return aliases.some(alias => alias.toLowerCase() === targetName)
+      }
+      return false
+    })
+  }
+
+  const formatIngredientName = (name: string) => {
+    const item = findInventoryItemByName(name)
+    if (!item?.alias) return name
+    const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+    if (aliases.length === 0) return name
+    return `${name}（${aliases.join('、')}）`
+  }
 
   const filteredRecipes = useMemo(() => {
     if (!searchQuery) return recipes
     const query = searchQuery.toLowerCase().trim()
     return recipes.filter(recipe => 
       recipe.name.toLowerCase().includes(query) ||
-      recipe.ingredients.some(ing => ing.name.toLowerCase().includes(query))
+      recipe.ingredients.some(ing => 
+        ing.name.toLowerCase().includes(query) ||
+        findInventoryItemByName(ing.name)?.alias?.toLowerCase().includes(query)
+      )
     )
-  }, [recipes, searchQuery])
+  }, [recipes, searchQuery, inventory])
 
   const ensureIngredientsExist = async (values: RecipeFormValues) => {
     const seen = new Set<string>()
@@ -162,7 +195,7 @@ export function RecipesPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4">
+      <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-12">
         {/* 搜索框 */}
         <div className="mb-4">
           <div className="relative">
@@ -272,7 +305,7 @@ export function RecipesPage() {
                                 isAlt ? "text-[#1a2414]" : "text-foreground"
                               )}
                             >
-                              {ing.name}
+                              {formatIngredientName(ing.name)}
                             </span>
                             <span
                               className={cn(
@@ -292,6 +325,11 @@ export function RecipesPage() {
                         )
                       })}
                     </div>
+                    {recipe.notes && (
+                      <div className="mt-2.5 pt-2.5 border-t border-border">
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{recipe.notes}</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )
@@ -302,7 +340,7 @@ export function RecipesPage() {
 
       {/* 回到顶部按钮 */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed bottom-35 right-6 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
         aria-label="回到顶部"
       >

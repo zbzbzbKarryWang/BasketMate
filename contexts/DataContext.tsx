@@ -51,12 +51,13 @@ type DataContextValue = {
   shops: Shop[]
   refresh: () => Promise<void>
   fetchIngredients: () => Promise<void>
-  updateIngredient: (id: string, quantity: number) => Promise<void>
+  updateIngredient: (id: string, quantity: number, additionalData?: Partial<{ name: string; addedAt: Date; alias?: string }>) => Promise<void>
   deleteIngredient: (id: string) => Promise<void>
   addIngredient: (data: {
     name: string
     unit?: string
     quantity?: number
+    alias?: string
   }) => Promise<string>
   fetchPrices: () => Promise<void>
   addPrice: (data: {
@@ -226,11 +227,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     await refresh()
   }, [refresh])
 
-  const updateIngredient = useCallback(async (id: string, quantity: number, additionalData?: Partial<{ name: string; addedAt: Date }>) => {
+  const updateIngredient = useCallback(async (id: string, quantity: number, additionalData?: Partial<{ name: string; addedAt: Date; alias?: string }>) => {
     const updateData: Record<string, any> = { quantity }
     if (additionalData) {
       if (additionalData.name) updateData.name = additionalData.name
       if (additionalData.addedAt) updateData.added_at = additionalData.addedAt.toISOString()
+      if (additionalData.alias !== undefined) updateData.alias = additionalData.alias || null
     }
     const { error } = await supabase
       .from("ingredients")
@@ -290,7 +292,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [refresh])
 
   const addIngredient = useCallback(
-    async (data: { name: string; unit?: string; quantity?: number }) => {
+    async (data: { name: string; unit?: string; quantity?: number; alias?: string }) => {
       const name = data.name.trim()
       const { data: existing } = await supabase
         .from("ingredients")
@@ -313,6 +315,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           name,
           unit: data.unit ?? "份",
           quantity: data.quantity ?? 0,
+          alias: data.alias ?? null,
         })
         .select("id")
         .single()
@@ -406,6 +409,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         name: recipe.name,
         category: recipe.category,
         ingredients: refs,
+        notes: recipe.notes ?? null,
       })
       if (error) throw error
       await refresh()
@@ -423,6 +427,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           ingredients: patch.ingredients,
         } as Recipe)
       }
+      if (patch.notes !== undefined) row.notes = patch.notes || null
       if (Object.keys(row).length) {
         const { error } = await supabase.from("recipes").update(row).eq("id", id)
         if (error) throw error
