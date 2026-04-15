@@ -58,8 +58,8 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="w-full bg-white border-b sticky top-0 z-10">
+    <div className="flex flex-col h-full">
+      <header className="flex-shrink-0 w-full bg-white border-b sticky top-0 z-10">
         <div className="flex items-center justify-center h-14 px-4">
           <h1 className="text-lg font-semibold">
             {formatDate(today)}
@@ -76,7 +76,7 @@ export function HomePage() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0]">
+      <main className="flex-1 overflow-y-auto px-6 py-4">
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
