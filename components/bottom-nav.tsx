@@ -18,7 +18,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg">
-      <div className="max-w-md mx-auto flex items-center justify-around h-16 px-0.5">
+      <div className="flex items-center justify-between h-16 px-0.5 w-full">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.id

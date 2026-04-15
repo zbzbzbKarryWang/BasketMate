@@ -262,7 +262,7 @@ export function ShoppingPage() {
   const listEmpty = visibleItems.length === 0
 
   return (
-    <div className="flex flex-col min-h-screen pb-32">
+    <div className="flex flex-col min-h-screen">
       {saving && (
         <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 shadow-lg">
@@ -272,9 +272,9 @@ export function ShoppingPage() {
         </div>
       )}
 
-      <header className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border z-10">
-        <div className="flex items-center justify-between px-4 h-14 gap-2">
-          <h1 className="font-semibold shrink-0">采购清单</h1>
+      <header className="w-full bg-white border-b sticky top-0 z-10">
+        <div className="flex items-center justify-between h-14 px-4 gap-2">
+          <h1 className="text-lg font-semibold shrink-0">采购清单</h1>
           <div className="flex items-center gap-1.5 shrink-0">
             <Button
               size="sm"
@@ -302,7 +302,7 @@ export function ShoppingPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 space-y-4">
+      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0] space-y-4">
         {listEmpty ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <ShoppingCart className="w-12 h-12 mb-3 opacity-50" />
@@ -466,9 +466,8 @@ export function ShoppingPage() {
           <div className="max-w-md mx-auto">
             <div className="flex gap-3">
               <LoadingButton
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 bg-[#7FC58E] hover:bg-[#6FB07E] text-white"
                 size="lg"
-                variant="outline"
                 onClick={() => setShowClearConfirm(true)}
                 isLoading={saving}
                 loadingText="清空中..."

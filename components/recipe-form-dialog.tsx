@@ -380,11 +380,11 @@ export function RecipeFormDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <DialogFooter className="gap-3 mt-6">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading} className="flex-1">
               取消
             </Button>
-            <LoadingButton onClick={() => void handleSubmit()} isLoading={isLoading} loadingText="保存中...">
+            <LoadingButton onClick={() => void handleSubmit()} isLoading={isLoading} loadingText="保存中..." className="flex-1">
               确认
             </LoadingButton>
           </DialogFooter>

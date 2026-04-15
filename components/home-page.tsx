@@ -58,13 +58,12 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-20">
-      {/* 顶部栏 */}
-      <header className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border z-10">
-        <div className="flex items-center justify-center px-4 h-12">
-          <div className="text-base font-semibold text-foreground">
+    <div className="flex flex-col min-h-screen">
+      <header className="w-full bg-white border-b sticky top-0 z-10">
+        <div className="flex items-center justify-center h-14 px-4">
+          <h1 className="text-lg font-semibold">
             {formatDate(today)}
-          </div>
+          </h1>
         </div>
       </header>
 
@@ -77,8 +76,7 @@ export function HomePage() {
         </div>
       )}
 
-      {/* 主内容区 */}
-      <main className="flex-1 px-4 py-4">
+      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0]">
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">

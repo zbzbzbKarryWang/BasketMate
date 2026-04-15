@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from 'react'
-import { Check, Plus } from 'lucide-react'
+import { Check, Plus, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingButton } from '@/components/ui/loading-button'
@@ -43,6 +43,10 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
   const [showAddSuccess, setShowAddSuccess] = useState(false)
   const [showAddError, setShowAddError] = useState(false)
   const [showDatePlannedError, setShowDatePlannedError] = useState(false)
+  const [showRandomRecipeDrawer, setShowRandomRecipeDrawer] = useState(false)
+  const [randomRecipeOption, setRandomRecipeOption] = useState<'sufficient' | 'all' | null>(null)
+  const [isRandomizing, setIsRandomizing] = useState(false)
+  const [selectedRandomRecipe, setSelectedRandomRecipe] = useState<Recipe | null>(null)
 
   const relativeDay = getRelativeDay(selectedDate)
 
@@ -83,6 +87,87 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
   const allThreeDaysPlanned = () => {
     const nextThreeDays = getNextThreeDays()
     return nextThreeDays.every(date => isDatePlanned(date))
+  }
+
+  // 获取已占用的菜谱ID列表（从所有未完成计划中）
+  const occupiedRecipeIds = useMemo(() => {
+    const ids = new Set<string>()
+    mealPlans.forEach(plan => {
+      if (plan.recipes) {
+        plan.recipes.forEach(recipe => {
+          ids.add(recipe.id)
+        })
+      }
+    })
+    return ids
+  }, [mealPlans])
+
+  // 获取可选的菜谱列表
+  const availableRecipes = useMemo(() => {
+    if (!randomRecipeOption) return []
+
+    let filtered = recipes.filter(recipe => {
+      return recipe.category === 'meal' && !occupiedRecipeIds.has(recipe.id)
+    })
+
+    if (randomRecipeOption === 'sufficient') {
+      filtered = filtered.filter(recipe => {
+        return recipe.ingredients.every(ing => {
+          const inventoryItem = inventory.find(
+            item => item.name.toLowerCase() === ing.name.toLowerCase()
+          )
+          return inventoryItem && inventoryItem.quantity >= ing.quantity
+        })
+      })
+    }
+
+    return filtered
+  }, [recipes, inventory, occupiedRecipeIds, randomRecipeOption])
+
+  // 处理随机选菜
+  const handleRandomSelect = async () => {
+    if (!randomRecipeOption || availableRecipes.length === 0) return
+
+    setIsRandomizing(true)
+    
+    // 走马灯动画
+    let interval: NodeJS.Timeout
+    let currentIndex = 0
+    
+    interval = setInterval(() => {
+      currentIndex = Math.floor(Math.random() * availableRecipes.length)
+      setSelectedRandomRecipe(availableRecipes[currentIndex])
+    }, 150) // 调整为150ms间隔
+
+    // 3秒后停止
+    setTimeout(() => {
+      clearInterval(interval)
+      setIsRandomizing(false)
+    }, 3000) // 调整为3秒
+  }
+
+  // 确认随机选菜
+  const confirmRandomRecipe = () => {
+    if (selectedRandomRecipe) {
+      setSelectedRecipes(prev => {
+        if (!prev.some(r => r.id === selectedRandomRecipe?.id)) {
+          return [...prev, selectedRandomRecipe]
+        }
+        return prev
+      })
+    }
+    setShowRandomRecipeDrawer(false)
+    // 重置状态
+    setRandomRecipeOption(null)
+    setSelectedRandomRecipe(null)
+  }
+
+  // 取消随机选菜
+  const cancelRandomRecipe = () => {
+    setShowRandomRecipeDrawer(false)
+    // 重置状态
+    setRandomRecipeOption(null)
+    setSelectedRandomRecipe(null)
   }
 
   const handleBreakfastChosenFromWheel = (id: string) => {
@@ -161,6 +246,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
 
   const recommendedRecipes = useMemo(() => {
     const scored = recipes
+      .filter(recipe => recipe.category === 'meal') // 只显示正餐类别
       .map((recipe) => {
         const matchingIngredients = recipe.ingredients.filter((ing) => {
           const inventoryItem = inventory.find(
@@ -187,7 +273,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
 
     const inList = new Set(scored.map((r) => r.recipe.id))
     const extraFromSelection = selectedRecipes
-      .filter((sr) => !inList.has(sr.id))
+      .filter((sr) => !inList.has(sr.id) && sr.category === 'meal') // 只包含正餐类别
       .map((recipe) => ({
         recipe,
         matchScore: 0,
@@ -197,7 +283,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
   }, [recipes, inventory, selectedRecipes])
 
   return (
-    <div className="flex flex-col min-h-screen pb-20 max-w-full overflow-x-hidden bg-background">
+    <div className="flex flex-col min-h-screen">
       {/* 等待状态遮罩层 */}
       {saving && (
         <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
@@ -208,8 +294,8 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         </div>
       )}
 
-      <header className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
+      <header className="w-full bg-white border-b sticky top-0 z-10">
+        <div className="flex items-center justify-between h-14 px-4">
           <h1 className="text-lg font-semibold">
             {editingPlan ? `${formatDate(selectedDate)}${relativeDay ? `（${relativeDay}）` : ''} 的计划` : "制定计划"}
           </h1>
@@ -225,7 +311,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 w-full max-w-full box-border">
+      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0]">
         <div className="flex flex-col gap-4">
           {/* 日期选择卡片 */}
           <Card className="shadow-sm gap-0">
@@ -354,14 +440,20 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
               <div className="flex gap-3 mt-4">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-10"
                   onClick={() => setShowRecipeDrawer(true)}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   手动加菜
                 </Button>
+                <Button
+                  className="flex-1 h-10 bg-[#008B1D] hover:bg-[#007B1A] text-white"
+                  onClick={() => setShowRandomRecipeDrawer(true)}
+                >
+                  随机选菜
+                </Button>
                 <LoadingButton
-                  className="flex-1"
+                  className="flex-1 h-10"
                   onClick={() => void handleConfirmMeal()}
                   disabled={!selectedBreakfastId || selectedRecipes.length === 0}
                   isLoading={saving}
@@ -460,6 +552,122 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         onCancel={() => setShowDatePlannedError(false)}
         showCancelButton={false}
       />
+
+      {/* 随机选菜抽屉 */}
+      {showRandomRecipeDrawer && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={cancelRandomRecipe} />
+
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl max-h-[90vh] h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300 w-full max-w-md mx-auto md:max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
+              <h3 className="font-semibold">随机选菜</h3>
+              <button
+                type="button"
+                onClick={cancelRandomRecipe}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 space-y-4 py-4">
+              {/* 选项区域 */}
+              <div className="shrink-0">
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRandomRecipeOption('sufficient')}
+                    className={cn(
+                      "flex-1 px-4 py-3 rounded-lg border transition-colors text-center",
+                      randomRecipeOption === 'sufficient'
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary hover:bg-primary/5"
+                    )}
+                  >
+                    仅食材充足的菜
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRandomRecipeOption('all')}
+                    className={cn(
+                      "flex-1 px-4 py-3 rounded-lg border transition-colors text-center",
+                      randomRecipeOption === 'all'
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary hover:bg-primary/5"
+                    )}
+                  >
+                    所有正餐菜
+                  </button>
+                </div>
+              </div>
+
+              {/* 随机选取按钮 */}
+              <div className="shrink-0">
+                <LoadingButton
+                  className={cn(
+                    "w-full py-3",
+                    randomRecipeOption
+                      ? "bg-[#008B1D] hover:bg-[#007B1A] text-white"
+                      : "bg-[#7FC58E] text-white cursor-not-allowed"
+                  )}
+                  onClick={handleRandomSelect}
+                  disabled={!randomRecipeOption || availableRecipes.length === 0}
+                  isLoading={isRandomizing}
+                  loadingText="选取中..."
+                >
+                  随机选取
+                </LoadingButton>
+              </div>
+
+              {/* 菜谱卡片区域 */}
+              <div className="flex-1">
+                {availableRecipes.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {availableRecipes.map((recipe) => (
+                      <div
+                        key={recipe.id}
+                        className={cn(
+                          "p-4 rounded-lg border transition-colors duration-200",
+                          selectedRandomRecipe?.id === recipe.id
+                            ? "border-primary bg-green-100"
+                            : "border-border bg-white hover:border-primary/50"
+                        )}
+                      >
+                        <div className="font-medium text-sm text-center">
+                          {recipe.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {randomRecipeOption === 'sufficient' 
+                      ? "暂无食材充足的菜谱"
+                      : "暂无可用的菜谱"
+                    }
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 底部按钮 */}
+            <div className="p-4 border-t border-border space-y-2 shrink-0">
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={cancelRandomRecipe} className="flex-1">
+                  取消
+                </Button>
+                <Button 
+                  onClick={confirmRandomRecipe}
+                  disabled={!selectedRandomRecipe}
+                  className="flex-1"
+                >
+                  确认
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <RecipeDrawer
         isOpen={showRecipeDrawer}
