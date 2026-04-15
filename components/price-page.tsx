@@ -71,8 +71,18 @@ export function PricePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const allStores = useMemo(() => {
-    return shops.map(shop => shop.name)
-  }, [shops])
+    // 计算每个店铺的价格数量
+    const storePriceCounts = shops.map(shop => {
+      const count = priceList.filter(item => item.shop_name === shop.name).length
+      return { name: shop.name, count }
+    })
+    
+    // 按照价格数量降序排序
+    storePriceCounts.sort((a, b) => b.count - a.count)
+    
+    // 提取排序后的店铺名称
+    return storePriceCounts.map(store => store.name)
+  }, [shops, priceList])
 
   const allIngredients = useMemo(() => {
     return [...new Set(priceList.map((item) => item.ingredient))]
@@ -369,10 +379,10 @@ export function PricePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-20">
-      <header className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border z-10">
-        <div className="flex items-center justify-between px-4 h-14">
-          <h1 className="font-semibold">价格对比</h1>
+    <div className="flex flex-col min-h-screen">
+      <header className="w-full bg-white border-b sticky top-0 z-10">
+        <div className="flex items-center justify-between h-14 px-4">
+          <h1 className="text-lg font-semibold">价格对比</h1>
           <Button
             size="sm"
             variant="outline"
@@ -385,7 +395,7 @@ export function PricePage() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4">
+      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0]">
         {/* 搜索框 */}
         <div className="mb-4">
           <div className="relative">
@@ -478,6 +488,17 @@ export function PricePage() {
           </Card>
         )}
       </main>
+
+      {/* 回到顶部按钮 */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-35 right-6 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+        aria-label="回到顶部"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+      </button>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">

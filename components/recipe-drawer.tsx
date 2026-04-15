@@ -44,13 +44,15 @@ export function RecipeDrawer({
 
   const filteredRecipes = useMemo(() => {
     const q = search.trim()
-    return recipes.filter(
-      (r) =>
-        !q ||
-        r.name.includes(q) ||
-        r.category.includes(q) ||
-        r.ingredients.some((i) => i.name.includes(q))
-    )
+    return recipes
+      .filter(recipe => recipe.category === 'meal') // 只显示正餐类别
+      .filter(
+        (r) =>
+          !q ||
+          r.name.includes(q) ||
+          r.category.includes(q) ||
+          r.ingredients.some((i) => i.name.includes(q))
+      )
   }, [recipes, search])
 
   const toggleRecipe = (id: string) => {

@@ -330,10 +330,10 @@ export function PlanPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-20 relative">
-      <header className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border z-10">
-        <div className="flex items-center justify-between px-4 h-14">
-          <h1 className="font-semibold">我的计划</h1>
+    <div className="flex flex-col min-h-screen">
+      <header className="w-full bg-white border-b sticky top-0 z-10">
+        <div className="flex items-center justify-between h-14 px-4">
+          <h1 className="text-lg font-semibold">我的计划</h1>
           <Button size="sm" onClick={handleNewPlan} className="gap-1">
             <Plus className="w-4 h-4" />
             新建
@@ -341,7 +341,7 @@ export function PlanPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 space-y-3">
+      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0] space-y-3">
         {sortedPlans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Calendar className="w-12 h-12 mb-3 opacity-50" />
