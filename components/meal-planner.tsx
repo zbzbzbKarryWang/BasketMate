@@ -283,7 +283,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
   }, [recipes, inventory, selectedRecipes])
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-full">
       {/* 等待状态遮罩层 */}
       {saving && (
         <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
@@ -294,7 +294,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         </div>
       )}
 
-      <header className="w-full bg-white border-b sticky top-0 z-10">
+      <header className="flex-shrink-0 w-full bg-white border-b sticky top-0 z-10">
         <div className="flex items-center justify-between h-14 px-4">
           <h1 className="text-lg font-semibold">
             {editingPlan ? `${formatDate(selectedDate)}${relativeDay ? `（${relativeDay}）` : ''} 的计划` : "制定计划"}
@@ -311,7 +311,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0]">
+      <main className="flex-1 overflow-y-auto px-6 py-4">
         <div className="flex flex-col gap-4">
           {/* 日期选择卡片 */}
           <Card className="shadow-sm gap-0">

@@ -151,8 +151,8 @@ export function RecipesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="w-full bg-white border-b sticky top-0 z-10">
+    <div className="flex flex-col h-full">
+      <header className="flex-shrink-0 w-full bg-white border-b sticky top-0 z-10">
         <div className="flex items-center justify-between h-14 px-4">
           <h1 className="text-lg font-semibold">菜谱</h1>
           <Button size="sm" className="gap-1 shrink-0" onClick={openAdd}>
@@ -162,7 +162,7 @@ export function RecipesPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 bg-[#F5F4F0]">
+      <main className="flex-1 overflow-y-auto px-6 py-4">
         {/* 搜索框 */}
         <div className="mb-4">
           <div className="relative">

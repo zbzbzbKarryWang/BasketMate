@@ -13,14 +13,14 @@ export default function App() {
   const { activeTab } = useAppStore()
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-[#F5F4F0]">
       {activeTab === 'home' && <HomePage />}
       {activeTab === 'plan' && <PlanPage />}
       {activeTab === 'shopping' && <ShoppingPage />}
       {activeTab === 'inventory' && <InventoryPage />}
       {activeTab === 'recipes' && <RecipesPage />}
       {activeTab === 'price' && <PricePage />}
-      <footer className="w-full bg-white border-t">
+      <footer className="h-16 w-full bg-white border-t">
         <BottomNav />
       </footer>
     </div>
