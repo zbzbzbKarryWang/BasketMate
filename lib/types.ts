@@ -2,6 +2,7 @@
 export interface Ingredient {
   id: string
   name: string
+  alias?: string
   quantity: number
   unit: string
   addedAt: Date
@@ -13,6 +14,7 @@ export interface Recipe {
   name: string
   category: string
   ingredients: { name: string; quantity: number; unit: string }[]
+  notes?: string
 }
 
 // 早餐选项
@@ -39,6 +41,7 @@ export interface MealPlan {
 export interface InventoryItem {
   id: string
   name: string
+  alias?: string
   quantity: number
   unit: string
   addedAt: Date

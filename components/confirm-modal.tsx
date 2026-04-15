@@ -64,7 +64,7 @@ export function ConfirmModal({
               <X className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-sm text-muted-foreground">{message}</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">{message}</p>
         </div>
         
         <div className="flex border-t border-border">

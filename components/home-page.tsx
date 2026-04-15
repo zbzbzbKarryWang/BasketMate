@@ -13,6 +13,22 @@ import { getBreakfastEmojiById } from '@/lib/breakfast-emojis'
 export function HomePage() {
   const { mealPlans, inventory, recipes, activePurchaseTask, error, connectionStatus } = useData()
   const { setActiveTab, setShowNewPlan } = useAppStore()
+
+  const formatIngredientName = (name: string) => {
+    const item = inventory.find(i => {
+      if (i.name.toLowerCase() === name.toLowerCase()) return true
+      if (i.alias) {
+        const aliases = i.alias.split(/[、,，]/).filter(a => a.trim())
+        return aliases.some(alias => alias.toLowerCase() === name.toLowerCase())
+      }
+      return false
+    })
+    if (!item?.alias) return name
+    const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+    if (aliases.length === 0) return name
+    return `${name}（${aliases.join('、')}）`
+  }
+
   const [showPlanFullError, setShowPlanFullError] = useState(false)
   const [showNoShoppingError, setShowNoShoppingError] = useState(false)
   const today = getTodayString()
@@ -76,7 +92,7 @@ export function HomePage() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto px-6 py-4">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-12">
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -124,7 +140,7 @@ export function HomePage() {
                                       : "text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
                                   }
                                 >
-                                  {ing.name}
+                                  {formatIngredientName(ing.name)}
                                 </span>
                               )
                             })}

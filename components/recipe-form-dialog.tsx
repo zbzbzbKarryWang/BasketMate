@@ -32,6 +32,7 @@ export type RecipeFormValues = {
   name: string
   category: string
   ingredients: RecipeFormIngredient[]
+  notes?: string
 }
 
 interface RecipeFormDialogProps {
@@ -62,6 +63,7 @@ export function RecipeFormDialog({
   const [ingredients, setIngredients] = useState<RecipeFormIngredient[]>([
     emptyIngredient(),
   ])
+  const [notes, setNotes] = useState('')
   // 菜谱名称建议相关状态
   const [showRecipeSuggestions, setShowRecipeSuggestions] = useState(false)
   const [recipeSuggestions, setRecipeSuggestions] = useState<string[]>([])
@@ -92,10 +94,12 @@ export function RecipeFormDialog({
             }))
           : [emptyIngredient()]
       )
+      setNotes(initialRecipe.notes || '')
     } else {
       setName('')
       setCategory('正餐')
       setIngredients([emptyIngredient()])
+      setNotes('')
     }
   }, [open, mode, initialRecipe])
 
@@ -180,7 +184,14 @@ export function RecipeFormDialog({
     
     // 匹配包含输入文字的食材
     const suggestions = inventory
-      .filter(item => item.name.toLowerCase().includes(value.toLowerCase()))
+      .filter(item => {
+        if (item.name.toLowerCase().includes(value.toLowerCase())) return true
+        if (item.alias) {
+          const aliases = item.alias.split(/[、,，]/).filter(a => a.trim())
+          return aliases.some(alias => alias.toLowerCase().includes(value.toLowerCase()))
+        }
+        return false
+      })
       .map(item => item.name)
     
     if (suggestions.length > 0) {
@@ -242,6 +253,7 @@ export function RecipeFormDialog({
         ...i,
         quantity: Math.max(0, i.quantity),
       })),
+      notes: notes.trim() || undefined,
     })
     onOpenChange(false)
   }
@@ -377,6 +389,16 @@ export function RecipeFormDialog({
               <p className="text-[11px] text-muted-foreground mt-2">
                 数量为整数，默认从 1 起算。若食材不在库存中，保存时会自动创建库存项（数量为 0）。
               </p>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">备注</Label>
+              <textarea
+                className="w-full mt-1 min-h-[80px] p-2 text-sm border border-border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="可选，添加烹饪小贴士或注意事项..."
+              />
             </div>
           </div>
 
