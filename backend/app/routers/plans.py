@@ -1,0 +1,133 @@
+from fastapi import APIRouter, HTTPException, Depends
+from typing import List
+import time
+from .. import models
+from .. import database
+from ..dependencies import get_current_user, User
+from ..services import shopping_service
+
+router = APIRouter(prefix="/api/plans", tags=["plans"])
+
+
+def refresh_purchase_task():
+    """刷新采购任务"""
+    import time
+    start = time.time()
+    blacklist = []
+    
+    t1 = time.time()
+    ing_rows = database.supabase.table("ingredients").select("id, name, quantity").execute()
+    inventory = ing_rows.data or []
+    print(f"[采购刷新-plans] 查询食材 {len(inventory)} 条: {time.time()-t1:.2f}s", flush=True)
+    
+    t2 = time.time()
+    recipe_rows = database.supabase.table("recipes").select("id, ingredients").execute()
+    recipe_map = {row["id"]: row for row in (recipe_rows.data or [])}
+    print(f"[采购刷新-plans] 查询菜谱 {len(recipe_map)} 条: {time.time()-t2:.2f}s", flush=True)
+    
+    from datetime import datetime
+    today = datetime.now().strftime("%Y-%m-%d")
+    t3 = time.time()
+    plan_rows = database.supabase.table("plans").select("id, date, breakfast_recipe_id, meal_ids").gte("date", today).execute()
+    print(f"[采购刷新-plans] 查询计划: {time.time()-t3:.2f}s", flush=True)
+    
+    t4 = time.time()
+    price_rows = database.supabase.table("prices").select("id, ingredient_id, shop_id, price").execute()
+    prices = price_rows.data or []
+    print(f"[采购刷新-plans] 查询价格 {len(prices)} 条: {time.time()-t4:.2f}s", flush=True)
+    
+    t5 = time.time()
+    pending_items = shopping_service.compute_pending_items(
+        inventory=inventory,
+        recipe_map=recipe_map,
+        plan_rows=(plan_rows.data or []),
+        prices=prices,
+        blacklist=blacklist
+    )
+    print(f"[采购刷新-plans] 计算待购项: {time.time()-t5:.2f}s", flush=True)
+    
+    t6 = time.time()
+    try:
+        database.supabase.table("shopping_list").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+    except:
+        pass
+    
+    if pending_items:
+        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
+        try:
+            database.supabase.table("shopping_list").insert(items_to_insert).execute()
+        except:
+            pass
+    print(f"[采购刷新-plans] 更新购物清单: {time.time()-t6:.2f}s", flush=True)
+    
+    print(f"[采购刷新-plans] 总耗时: {time.time()-start:.2f}s", flush=True)
+
+
+@router.get("", response_model=List[models.PlanResponse])
+async def get_plans(current_user: User = Depends(get_current_user)):
+    """获取所有计划"""
+    start = time.time()
+    response = database.supabase.table("plans").select("*").order("date").execute()
+    print(f"[耗时] GET /plans {time.time()-start:.2f}s", flush=True)
+    return response.data
+
+
+@router.get("/{plan_id}", response_model=models.PlanResponse)
+async def get_plan(plan_id: str, current_user: User = Depends(get_current_user)):
+    """获取单个计划"""
+    start = time.time()
+    response = database.supabase.table("plans").select("*").eq("id", plan_id).single().execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    print(f"[耗时] GET /plans/{plan_id} {time.time()-start:.2f}s", flush=True)
+    return response.data
+
+
+@router.post("", response_model=models.PlanResponse)
+async def create_plan(plan: models.PlanCreate, current_user: User = Depends(get_current_user)):
+    """创建新计划"""
+    start = time.time()
+    data = {
+        "date": plan.date,
+        "breakfast_recipe_id": plan.breakfast_recipe_id,
+        "meal_ids": plan.meal_ids
+    }
+    response = database.supabase.table("plans").insert(data).execute()
+    print(f"[耗时] POST /plans 创建计划: {time.time()-start:.2f}s", flush=True)
+    
+    refresh_start = time.time()
+    refresh_purchase_task()
+    print(f"[耗时] POST /plans 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    print(f"[耗时] POST /plans 总耗时: {time.time()-start:.2f}s", flush=True)
+    return response.data[0]
+
+
+@router.put("/{plan_id}", response_model=models.PlanResponse)
+async def update_plan(plan_id: str, plan: models.PlanUpdate, current_user: User = Depends(get_current_user)):
+    """更新计划"""
+    start = time.time()
+    update_data = {k: v for k, v in plan.model_dump().items() if v is not None}
+    response = database.supabase.table("plans").update(update_data).eq("id", plan_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    print(f"[耗时] PUT /plans/{plan_id} 更新计划: {time.time()-start:.2f}s", flush=True)
+    
+    refresh_start = time.time()
+    refresh_purchase_task()
+    print(f"[耗时] PUT /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    print(f"[耗时] PUT /plans/{plan_id} 总耗时: {time.time()-start:.2f}s", flush=True)
+    return response.data[0]
+
+
+@router.delete("/{plan_id}")
+async def delete_plan(plan_id: str, current_user: User = Depends(get_current_user)):
+    """删除计划"""
+    start = time.time()
+    response = database.supabase.table("plans").delete().eq("id", plan_id).execute()
+    print(f"[耗时] DELETE /plans/{plan_id} 删除计划: {time.time()-start:.2f}s", flush=True)
+    
+    refresh_start = time.time()
+    refresh_purchase_task()
+    print(f"[耗时] DELETE /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    print(f"[耗时] DELETE /plans/{plan_id} 总耗时: {time.time()-start:.2f}s", flush=True)
+    return {"message": "Plan deleted"}
