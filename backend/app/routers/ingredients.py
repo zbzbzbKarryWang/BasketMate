@@ -4,11 +4,13 @@ import time
 from .. import models
 from .. import database
 from ..dependencies import get_current_user, User
+from ..decorators import log_operation
 
 router = APIRouter(prefix="/api/ingredients", tags=["ingredients"])
 
 
 @router.get("", response_model=List[models.IngredientResponse])
+@log_operation("获取食材列表")
 async def get_ingredients(current_user: User = Depends(get_current_user)):
     """获取所有食材列表"""
     import time
@@ -21,6 +23,7 @@ async def get_ingredients(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/{ingredient_id}", response_model=models.IngredientResponse)
+@log_operation("获取食材详情")
 async def get_ingredient(ingredient_id: str, current_user: User = Depends(get_current_user)):
     """获取单个食材"""
     import time
@@ -33,6 +36,7 @@ async def get_ingredient(ingredient_id: str, current_user: User = Depends(get_cu
 
 
 @router.post("", response_model=models.IngredientResponse)
+@log_operation("创建食材")
 async def create_ingredient(ingredient: models.IngredientCreate, current_user: User = Depends(get_current_user)):
     """创建新食材"""
     import time
@@ -42,10 +46,10 @@ async def create_ingredient(ingredient: models.IngredientCreate, current_user: U
         if not name:
             raise HTTPException(status_code=400, detail="食材名称不能为空")
         
-        # 检查是否已存在
         existing = database.supabase.table("ingredients").select("id, quantity").eq("name", name).maybe_single().execute()
         if existing and existing.data:
-            new_quantity = existing.data["quantity"] + (ingredient.quantity or 0)
+            old_qty = existing.data["quantity"]
+            new_quantity = old_qty + (ingredient.quantity or 0)
             response = database.supabase.table("ingredients").update({"quantity": new_quantity}).eq("id", existing.data["id"]).execute()
             if response and response.data:
                 print(f"[耗时] POST /ingredients (更新) {time.time()-start:.2f}s", flush=True)
@@ -70,6 +74,7 @@ async def create_ingredient(ingredient: models.IngredientCreate, current_user: U
 
 
 @router.put("/{ingredient_id}", response_model=models.IngredientResponse)
+@log_operation("更新食材")
 async def update_ingredient(ingredient_id: str, ingredient: models.IngredientUpdate, current_user: User = Depends(get_current_user)):
     """更新食材"""
     import time
@@ -86,22 +91,21 @@ async def update_ingredient(ingredient_id: str, ingredient: models.IngredientUpd
 
 
 @router.delete("/{ingredient_id}")
+@log_operation("删除食材")
 async def delete_ingredient(ingredient_id: str, current_user: User = Depends(get_current_user)):
     """删除食材"""
     import time
     start = time.time()
     
-    # 批量查询所有菜谱
     recipes = database.supabase.table("recipes").select("id, ingredients").execute()
     recipes_to_update = []
-    
+
     for recipe in recipes.data or []:
         ingredients = recipe.get("ingredients") or []
         updated = [ing for ing in ingredients if ing.get("ingredient_id") != ingredient_id]
         if len(updated) != len(ingredients):
             recipes_to_update.append({"id": recipe["id"], "ingredients": updated})
     
-    # 批量更新菜谱
     if recipes_to_update:
         try:
             for update_data in recipes_to_update:
@@ -109,10 +113,9 @@ async def delete_ingredient(ingredient_id: str, current_user: User = Depends(get
         except Exception as e:
             print(f"[错误] 批量更新菜谱失败: {str(e)}", flush=True)
     
-    # 批量查询采购任务
     tasks = database.supabase.table("purchase_tasks").select("id, pending_items, removed_ingredient_ids").eq("status", "active").execute()
     tasks_to_update = []
-    
+
     for task in tasks.data or []:
         pending = task.get("pending_items") or []
         updated_pending = [item for item in pending if item.get("ingredient_id") != ingredient_id]
@@ -126,7 +129,6 @@ async def delete_ingredient(ingredient_id: str, current_user: User = Depends(get
                 "removed_ingredient_ids": removed_ids
             })
     
-    # 批量更新采购任务
     if tasks_to_update:
         try:
             for update_data in tasks_to_update:
@@ -137,7 +139,6 @@ async def delete_ingredient(ingredient_id: str, current_user: User = Depends(get
         except Exception as e:
             print(f"[错误] 批量更新采购任务失败: {str(e)}", flush=True)
     
-    # 删除食材
     response = database.supabase.table("ingredients").delete().eq("id", ingredient_id).execute()
     
     print(f"[耗时] DELETE /ingredients/{ingredient_id} {time.time()-start:.2f}s", flush=True)
@@ -145,6 +146,7 @@ async def delete_ingredient(ingredient_id: str, current_user: User = Depends(get
 
 
 @router.post("/resolve")
+@log_operation("解析食材名称")
 async def resolve_ingredient_id(name: str, current_user: User = Depends(get_current_user)):
     """根据名称解析或创建食材ID"""
     import time
@@ -164,6 +166,7 @@ async def resolve_ingredient_id(name: str, current_user: User = Depends(get_curr
 
 
 @router.post("/batch-update-quantity")
+@log_operation("批量更新食材数量")
 async def batch_update_quantities(updates: List[models.BatchUpdateItem], current_user: User = Depends(get_current_user)):
     """批量更新食材数量"""
     import time

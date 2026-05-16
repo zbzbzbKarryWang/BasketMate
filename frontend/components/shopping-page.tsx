@@ -156,14 +156,21 @@ export function ShoppingPage() {
   const noPurchasePlan = !activePurchaseTask || 
     (pendingItems.length === 0 && customItems.length === 0)
 
-  const groupedByStore = [...pendingItems, ...customItems.map(item => ({
+  const allItems = [...pendingItems, ...customItems.map(item => ({
     ...item,
     ingredient_id: `custom-${item.id}`,
     shop_id: null,
     price: 0,
     unit: "",
     checked: item.checked
-  }))].reduce(
+  }))]
+  const visibleItems = allItems.filter(item => !locallyRemovedIds.has(item.ingredient_id))
+  const checkedCount = visibleItems.filter(item => item.checked).length
+  const listEmpty = visibleItems.length === 0
+  const removedItems = allItems.filter(item => locallyRemovedIds.has(item.ingredient_id))
+  const checkedItems = visibleItems.filter(item => item.checked)
+
+  const groupedByStore = visibleItems.reduce(
     (acc, item) => {
       const store = item.shop_name || "待定"
       if (!acc[store]) acc[store] = []
@@ -250,13 +257,7 @@ export function ShoppingPage() {
   }
 
   const handleDelete = (ingredientId: string) => {
-    if (ingredientId.startsWith("custom-")) {
-      const customId = ingredientId.replace("custom-", "")
-      setCustomItems(prev => prev.filter(item => item.id !== customId))
-    } else {
-      setLocallyRemovedIds(prev => new Set([...prev, ingredientId]))
-      setPendingItems(prev => prev.filter(item => item.ingredient_id !== ingredientId))
-    }
+    setLocallyRemovedIds(prev => new Set([...prev, ingredientId]))
     setHasUnsavedChanges(true)
   }
 
@@ -323,9 +324,7 @@ export function ShoppingPage() {
     }
   }
 
-  const visibleItems = [...pendingItems, ...customItems]
-  const checkedCount = visibleItems.filter(item => item.checked).length
-  const listEmpty = visibleItems.length === 0
+
 
   return (
     <div className="flex flex-col h-full">
@@ -410,79 +409,132 @@ export function ShoppingPage() {
             )}
           </div>
         ) : (
-          Object.entries(groupedByStore).map(([store, items]) => {
-            const storeItemsCount = items.length
-            const isExpanded = expandedStores.has(store)
-            
-            if (storeItemsCount === 0) return null
-            
-            const toggleExpand = () => {
-              setExpandedStores(prev => {
-                const newSet = new Set(prev)
-                if (isExpanded) {
-                  newSet.delete(store)
-                } else {
-                  newSet.add(store)
-                }
-                return newSet
-              })
-            }
-            
-            return (
-              <Card key={store} className="shadow-sm">
-                <CardHeader className="pb-2 cursor-pointer" onClick={toggleExpand}>
-                  <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
-                    <span>{store}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{storeItemsCount}项</span>
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </div>
+          <>
+            {removedItems.length > 0 && (
+              <Card className="shadow-sm border-red-100">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-red-600">
+                    已加入黑名单 ({removedItems.length})
                   </CardTitle>
                 </CardHeader>
-                {isExpanded && (
-                  <CardContent>
-                    <div className="space-y-2">
-                      {items.map((item) => {
-                        const isCustom = item.ingredient_id.startsWith("custom-")
-                        const currentQty = isCustom 
-                          ? (customItems.find(c => c.id === item.ingredient_id.replace("custom-", ""))?.need_quantity || 0)
-                          : item.need_quantity
-                        
-                        return (
-                          <div
-                            key={item.ingredient_id}
-                            className={cn(
-                              "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                              item.checked ? "bg-muted/30" : "bg-muted"
-                            )}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => handleToggleCheck(item.ingredient_id)}
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {removedItems.map((item) => {
+                      const isCustom = item.ingredient_id.startsWith("custom-")
+                      return (
+                        <span
+                          key={item.ingredient_id}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-50 text-red-600 line-through"
+                        >
+                          {isCustom ? item.name : item.ingredient_name}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {checkedItems.length > 0 && (
+              <Card className="shadow-sm border-green-100">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    本次已采购 ({checkedItems.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {checkedItems.map((item) => {
+                      const isCustom = item.ingredient_id.startsWith("custom-")
+                      return (
+                        <span
+                          key={item.ingredient_id}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-600"
+                        >
+                          {isCustom ? item.name : item.ingredient_name}
+                          <span className="text-[10px] opacity-70">×{item.need_quantity}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {Object.entries(groupedByStore).map(([store, items]) => {
+              const storeItemsCount = items.length
+              const isExpanded = expandedStores.has(store)
+
+              if (storeItemsCount === 0) return null
+
+              const toggleExpand = () => {
+                setExpandedStores(prev => {
+                  const newSet = new Set(prev)
+                  if (isExpanded) {
+                    newSet.delete(store)
+                  } else {
+                    newSet.add(store)
+                  }
+                  return newSet
+                })
+              }
+
+              return (
+                <Card key={store} className="shadow-sm">
+                  <CardHeader className="pb-2 cursor-pointer" onClick={toggleExpand}>
+                    <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
+                      <span>{store}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{storeItemsCount}项</span>
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  {isExpanded && (
+                    <CardContent>
+                      <div className="space-y-2">
+                        {items.map((item) => {
+                          const isCustom = item.ingredient_id.startsWith("custom-")
+                          const currentQty = isCustom
+                            ? (customItems.find(c => c.id === item.ingredient_id.replace("custom-", ""))?.need_quantity || 0)
+                            : item.need_quantity
+
+                          return (
+                            <div
+                              key={item.ingredient_id}
                               className={cn(
-                                "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0",
-                                item.checked
-                                  ? "border-primary bg-primary"
-                                  : "border-muted-foreground"
+                                "flex items-center gap-3 p-2 rounded-lg transition-colors",
+                                item.checked ? "bg-muted/30" : "bg-muted"
                               )}
                             >
-                              {item.checked && (
-                                <Check className="w-3 h-3 text-primary-foreground" />
-                              )}
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleCheck(item.ingredient_id)}
+                                className={cn(
+                                  "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0",
+                                  item.checked
+                                    ? "border-primary bg-primary"
+                                    : "border-muted-foreground"
+                                )}
+                              >
+                                {item.checked && (
+                                  <Check className="w-3 h-3 text-primary-foreground" />
+                                )}
+                              </button>
 
-                            <div
+                              <div
                               className={cn(
                                 "flex-1 text-sm min-w-0",
                                 item.checked && "line-through text-muted-foreground"
                               )}
                             >
                               <div className="flex items-center gap-2">
-                                <span className="truncate">{item.name}</span>
+                                <span className="truncate">{isCustom ? item.name : item.ingredient_name}</span>
                                 {isCustom && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
                                     临时
@@ -491,56 +543,57 @@ export function ShoppingPage() {
                               </div>
                             </div>
 
-                            <div className="text-xs text-muted-foreground w-14 text-center shrink-0">
-                              {item.price > 0 ? `¥${item.price}` : "-"}
-                            </div>
+                              <div className="text-xs text-muted-foreground w-14 text-center shrink-0">
+                                {item.price > 0 ? `¥${item.price}` : "-"}
+                              </div>
 
-                            <div className="flex items-center gap-0.5 shrink-0 tabular-nums">
-                              <button
-                                type="button"
-                                onClick={() => isCustom 
-                                  ? handleCustomQuantityChange(item.ingredient_id.replace("custom-", ""), -1)
-                                  : handleQuantityChange(item.ingredient_id, -1)
-                                }
-                                className="text-sm text-muted-foreground hover:text-foreground px-1 py-1 min-w-[1.5rem]"
-                              >
-                                −
-                              </button>
-                              <input
-                                type="number"
-                                value={currentQty}
-                                onChange={(e) => {
-                                  const value = parseFloat(e.target.value)
-                                  if (isCustom) {
-                                    handleCustomQuantityInput(item.ingredient_id.replace("custom-", ""), value)
-                                  } else {
-                                    handleQuantityInput(item.ingredient_id, value)
+                              <div className="flex items-center gap-0.5 shrink-0 tabular-nums">
+                                <button
+                                  type="button"
+                                  onClick={() => isCustom
+                                    ? handleCustomQuantityChange(item.ingredient_id.replace("custom-", ""), -1)
+                                    : handleQuantityChange(item.ingredient_id, -1)
                                   }
-                                }}
-                                step="0.1"
-                                min="0"
-                                className="w-14 text-center text-sm border border-border rounded px-1"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => isCustom 
-                                  ? handleCustomQuantityChange(item.ingredient_id.replace("custom-", ""), 1)
-                                  : handleQuantityChange(item.ingredient_id, 1)
-                                }
-                                className="text-sm text-muted-foreground hover:text-foreground px-1 py-1 min-w-[1.5rem]"
-                              >
-                                +
-                              </button>
+                                  className="text-sm text-muted-foreground hover:text-foreground px-1 py-1 min-w-[1.5rem]"
+                                >
+                                  −
+                                </button>
+                                <input
+                                  type="number"
+                                  value={currentQty}
+                                  onChange={(e) => {
+                                    const value = parseFloat(e.target.value)
+                                    if (isCustom) {
+                                      handleCustomQuantityInput(item.ingredient_id.replace("custom-", ""), value)
+                                    } else {
+                                      handleQuantityInput(item.ingredient_id, value)
+                                    }
+                                  }}
+                                  step="0.1"
+                                  min="0"
+                                  className="w-14 text-center text-sm border border-border rounded px-1"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => isCustom
+                                    ? handleCustomQuantityChange(item.ingredient_id.replace("custom-", ""), 1)
+                                    : handleQuantityChange(item.ingredient_id, 1)
+                                  }
+                                  className="text-sm text-muted-foreground hover:text-foreground px-1 py-1 min-w-[1.5rem]"
+                                >
+                                  +
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            )
-          })
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            })}
+          </>
         )}
       </main>
 

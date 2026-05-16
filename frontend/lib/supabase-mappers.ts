@@ -55,7 +55,7 @@ export function parseRecipeIngredients(raw: unknown): RecipeIngredientRef[] {
     .map((x) => {
       if (!x || typeof x !== 'object') return null
       const o = x as Record<string, unknown>
-      const id = (o.ingredient_id ?? o.ingredientId) as string | undefined
+      const id = o.ingredient_id as string | undefined
       const q = Number(o.quantity ?? 0)
       const n = o.name as string | undefined
       if (!id) return null

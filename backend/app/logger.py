@@ -10,7 +10,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 logger = logging.getLogger("basketmate")
 logger.setLevel(logging.INFO)
 
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+formatter = logging.Formatter("%(asctime)s.%(levelname)s %(name)s %(message)s", "%Y-%m-%d %H:%M:%S.%f")
 
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)

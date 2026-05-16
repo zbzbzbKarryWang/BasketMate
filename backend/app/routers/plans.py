@@ -5,6 +5,10 @@ from .. import models
 from .. import database
 from ..dependencies import get_current_user, User
 from ..services import shopping_service
+from ..decorators import log_operation
+from ..logger import get_logger
+
+logger = get_logger("basketmate")
 
 router = APIRouter(prefix="/api/plans", tags=["plans"])
 
@@ -12,23 +16,33 @@ router = APIRouter(prefix="/api/plans", tags=["plans"])
 def refresh_purchase_task():
     """刷新采购任务"""
     import time
+    from datetime import datetime
     start = time.time()
     blacklist = []
     
     t1 = time.time()
     ing_rows = database.supabase.table("ingredients").select("id, name, quantity").execute()
     inventory = ing_rows.data or []
+    logger.info(f"[plans shopping] 库存数量: {len(inventory)}")
+    for inv in inventory[:5]:
+        logger.info(f"[plans shopping] 库存: id={inv.get('id')}, name={inv.get('name')}, qty={inv.get('quantity')}")
     print(f"[采购刷新-plans] 查询食材 {len(inventory)} 条: {time.time()-t1:.2f}s", flush=True)
     
     t2 = time.time()
     recipe_rows = database.supabase.table("recipes").select("id, ingredients").execute()
     recipe_map = {row["id"]: row for row in (recipe_rows.data or [])}
+    logger.info(f"[plans shopping] 菜谱数量: {len(recipe_map)}")
+    for rid, r in recipe_map.items():
+        ings = r.get("ingredients") or []
+        logger.info(f"[plans shopping] 菜谱rid={rid}, 食材数={len(ings)}: {ings[:3]}")
     print(f"[采购刷新-plans] 查询菜谱 {len(recipe_map)} 条: {time.time()-t2:.2f}s", flush=True)
     
-    from datetime import datetime
     today = datetime.now().strftime("%Y-%m-%d")
     t3 = time.time()
-    plan_rows = database.supabase.table("plans").select("id, date, breakfast_recipe_id, meal_ids").gte("date", today).execute()
+    plan_rows = database.supabase.table("plans").select("id, date, breakfast_recipe_id, meal_ids").execute()
+    logger.info(f"[plans shopping] 查询所有未删除计划，查询到 {len(plan_rows.data or [])} 条计划")
+    for p in (plan_rows.data or []):
+        logger.info(f"[plans shopping] 计划: id={p.get('id')}, date={p.get('date')}, breakfast={p.get('breakfast_recipe_id')}, meals={p.get('meal_ids')}")
     print(f"[采购刷新-plans] 查询计划: {time.time()-t3:.2f}s", flush=True)
     
     t4 = time.time()
@@ -37,6 +51,7 @@ def refresh_purchase_task():
     print(f"[采购刷新-plans] 查询价格 {len(prices)} 条: {time.time()-t4:.2f}s", flush=True)
     
     t5 = time.time()
+    logger.info(f"[plans shopping] 调用compute_pending_items: plan_rows数量={len(plan_rows.data or [])}, inventory数量={len(inventory)}, recipe_map数量={len(recipe_map)}, blacklist={blacklist}")
     pending_items = shopping_service.compute_pending_items(
         inventory=inventory,
         recipe_map=recipe_map,
@@ -53,7 +68,7 @@ def refresh_purchase_task():
         pass
     
     if pending_items:
-        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
+        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("ingredient_name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
         try:
             database.supabase.table("shopping_list").insert(items_to_insert).execute()
         except:
@@ -64,6 +79,7 @@ def refresh_purchase_task():
 
 
 @router.get("", response_model=List[models.PlanResponse])
+@log_operation("获取计划列表")
 async def get_plans(current_user: User = Depends(get_current_user)):
     """获取所有计划"""
     start = time.time()
@@ -73,6 +89,7 @@ async def get_plans(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/{plan_id}", response_model=models.PlanResponse)
+@log_operation("获取计划详情")
 async def get_plan(plan_id: str, current_user: User = Depends(get_current_user)):
     """获取单个计划"""
     start = time.time()
@@ -84,6 +101,7 @@ async def get_plan(plan_id: str, current_user: User = Depends(get_current_user))
 
 
 @router.post("", response_model=models.PlanResponse)
+@log_operation("创建计划")
 async def create_plan(plan: models.PlanCreate, current_user: User = Depends(get_current_user)):
     """创建新计划"""
     start = time.time()
@@ -96,13 +114,18 @@ async def create_plan(plan: models.PlanCreate, current_user: User = Depends(get_
     print(f"[耗时] POST /plans 创建计划: {time.time()-start:.2f}s", flush=True)
     
     refresh_start = time.time()
-    refresh_purchase_task()
-    print(f"[耗时] POST /plans 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    try:
+        refresh_purchase_task()
+        print(f"[耗时] POST /plans 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    except Exception as e:
+        logger.error(f"[plans] 刷新采购清单失败: {str(e)}")
+        print(f"[耗时] POST /plans 刷新采购失败: {time.time()-refresh_start:.2f}s", flush=True)
     print(f"[耗时] POST /plans 总耗时: {time.time()-start:.2f}s", flush=True)
     return response.data[0]
 
 
 @router.put("/{plan_id}", response_model=models.PlanResponse)
+@log_operation("更新计划")
 async def update_plan(plan_id: str, plan: models.PlanUpdate, current_user: User = Depends(get_current_user)):
     """更新计划"""
     start = time.time()
@@ -113,13 +136,18 @@ async def update_plan(plan_id: str, plan: models.PlanUpdate, current_user: User 
     print(f"[耗时] PUT /plans/{plan_id} 更新计划: {time.time()-start:.2f}s", flush=True)
     
     refresh_start = time.time()
-    refresh_purchase_task()
-    print(f"[耗时] PUT /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    try:
+        refresh_purchase_task()
+        print(f"[耗时] PUT /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    except Exception as e:
+        logger.error(f"[plans] 刷新采购清单失败: {str(e)}")
+        print(f"[耗时] PUT /plans/{plan_id} 刷新采购失败: {time.time()-refresh_start:.2f}s", flush=True)
     print(f"[耗时] PUT /plans/{plan_id} 总耗时: {time.time()-start:.2f}s", flush=True)
     return response.data[0]
 
 
 @router.delete("/{plan_id}")
+@log_operation("删除计划")
 async def delete_plan(plan_id: str, current_user: User = Depends(get_current_user)):
     """删除计划"""
     start = time.time()
@@ -127,7 +155,11 @@ async def delete_plan(plan_id: str, current_user: User = Depends(get_current_use
     print(f"[耗时] DELETE /plans/{plan_id} 删除计划: {time.time()-start:.2f}s", flush=True)
     
     refresh_start = time.time()
-    refresh_purchase_task()
-    print(f"[耗时] DELETE /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    try:
+        refresh_purchase_task()
+        print(f"[耗时] DELETE /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+    except Exception as e:
+        logger.error(f"[plans] 刷新采购清单失败: {str(e)}")
+        print(f"[耗时] DELETE /plans/{plan_id} 刷新采购失败: {time.time()-refresh_start:.2f}s", flush=True)
     print(f"[耗时] DELETE /plans/{plan_id} 总耗时: {time.time()-start:.2f}s", flush=True)
     return {"message": "Plan deleted"}
