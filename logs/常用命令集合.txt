@@ -1,0 +1,45 @@
+命令	说明
+docker compose up -d	启动所有服务（首次或不需要重建时）
+docker compose up -d --build	重新构建镜像并启动所有服务（修改代码后必须使用）
+docker compose up -d --build frontend	仅重建并启动前端容器
+docker compose up -d --build backend	仅重建并启动后端容器
+docker compose down	停止并删除所有容器和网络
+docker compose restart backend	仅重启后端容器（不重建镜像，不应用代码修改）
+docker compose restart frontend	仅重启前端容器（同上）
+docker compose logs backend	查看后端容器日志
+docker compose logs backend --tail 50	查看后端最近 50 行日志
+docker compose logs frontend	查看前端容器日志
+docker compose exec frontend ping backend	测试容器间网络连通性
+
+docker compose down
+docker compose up -d --build
+
+🖥️ 本地开发（单独启动前后端，不使用 Docker）
+命令	说明
+cd backend	进入后端目录
+uvicorn app.main:app --reload --port 8000	启动 FastAPI 后端（热重载）
+cd frontend	进入前端目录
+npm run dev	启动 Next.js 前端（热重载）
+npm install	安装前端依赖
+pip install -r requirements.txt	安装后端依赖
+pip list	查看当前 Python 环境已安装的包
+
+🐙 Git 与 GitHub 相关
+命令	说明
+git add .	暂存所有修改
+git commit -m "提交信息"	提交修改
+git pull --rebase origin main	拉取远程最新代码并变基
+git push origin main	推送代码到远程 main 分支
+git checkout main	切换到 main 分支
+git branch -M main	重命名当前分支为 main
+git remote -v	查看远程仓库地址
+git remote set-url origin git@github.com:zbzbzbKarryWang/BasketMate.git	修改远程仓库地址为 SSH
+ssh -T git@github.com	测试 SSH 连接 GitHub
+cat ~/.ssh/id_rsa.pub	查看 SSH 公钥
+
+🧪 测试与调试相关
+命令	说明
+python test_api_speed.py	测试所有后端 API 响应时间
+python test_all_endpoints.py	全量测试所有 API 端点性能（含批量更新）
+python test_batch_update.py	单独测试批量更新接口
+Select-String -Path "backend\app\*.py" -Pattern "unit" -SimpleMatch

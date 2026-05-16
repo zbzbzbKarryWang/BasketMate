@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir -p /logs
 
+# 设置时区为北京时间
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
 COPY app/ ./app/
 
 EXPOSE 8000

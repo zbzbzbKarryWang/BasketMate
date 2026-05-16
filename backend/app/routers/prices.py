@@ -4,11 +4,13 @@ import time
 from .. import models
 from .. import database
 from ..dependencies import get_current_user, User
+from ..decorators import log_operation
 
 router = APIRouter(prefix="/api/prices", tags=["prices"])
 
 
 @router.get("", response_model=List[models.PriceResponse])
+@log_operation("获取价格列表")
 async def get_prices(current_user: User = Depends(get_current_user)):
     """获取所有价格"""
     start = time.time()
@@ -24,6 +26,7 @@ async def get_prices(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/{price_id}", response_model=models.PriceResponse)
+@log_operation("获取价格详情")
 async def get_price(price_id: str, current_user: User = Depends(get_current_user)):
     """获取单个价格"""
     start = time.time()
@@ -37,6 +40,7 @@ async def get_price(price_id: str, current_user: User = Depends(get_current_user
 
 
 @router.post("", response_model=models.PriceResponse)
+@log_operation("创建价格")
 async def create_price(price: models.PriceCreate, current_user: User = Depends(get_current_user)):
     """创建新价格"""
     start = time.time()
@@ -46,6 +50,7 @@ async def create_price(price: models.PriceCreate, current_user: User = Depends(g
 
 
 @router.put("/{price_id}", response_model=models.PriceResponse)
+@log_operation("更新价格")
 async def update_price(price_id: str, price: models.PriceUpdate, current_user: User = Depends(get_current_user)):
     """更新价格"""
     start = time.time()
@@ -58,6 +63,7 @@ async def update_price(price_id: str, price: models.PriceUpdate, current_user: U
 
 
 @router.delete("/{price_id}")
+@log_operation("删除价格")
 async def delete_price(price_id: str, current_user: User = Depends(get_current_user)):
     """删除价格"""
     start = time.time()
@@ -67,6 +73,7 @@ async def delete_price(price_id: str, current_user: User = Depends(get_current_u
 
 
 @router.post("/upsert")
+@log_operation("Upsert价格")
 async def upsert_price(price: models.PriceCreate, current_user: User = Depends(get_current_user)):
     """ upsert 价格（存在则更新，不存在则创建）"""
     start = time.time()

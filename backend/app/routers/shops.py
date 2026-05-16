@@ -4,11 +4,13 @@ import time
 from .. import models
 from .. import database
 from ..dependencies import get_current_user, User
+from ..decorators import log_operation
 
 router = APIRouter(prefix="/api/shops", tags=["shops"])
 
 
 @router.get("", response_model=List[models.ShopResponse])
+@log_operation("获取店铺列表")
 async def get_shops(current_user: User = Depends(get_current_user)):
     """获取所有店铺"""
     start = time.time()
@@ -18,6 +20,7 @@ async def get_shops(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/{shop_id}", response_model=models.ShopResponse)
+@log_operation("获取店铺详情")
 async def get_shop(shop_id: str, current_user: User = Depends(get_current_user)):
     """获取单个店铺"""
     start = time.time()
@@ -29,6 +32,7 @@ async def get_shop(shop_id: str, current_user: User = Depends(get_current_user))
 
 
 @router.post("", response_model=models.ShopResponse)
+@log_operation("创建店铺")
 async def create_shop(shop: models.ShopCreate, current_user: User = Depends(get_current_user)):
     """创建新店铺"""
     start = time.time()
@@ -38,6 +42,7 @@ async def create_shop(shop: models.ShopCreate, current_user: User = Depends(get_
 
 
 @router.put("/{shop_id}", response_model=models.ShopResponse)
+@log_operation("更新店铺")
 async def update_shop(shop_id: str, shop: models.ShopUpdate, current_user: User = Depends(get_current_user)):
     """更新店铺"""
     start = time.time()
@@ -50,6 +55,7 @@ async def update_shop(shop_id: str, shop: models.ShopUpdate, current_user: User 
 
 
 @router.delete("/{shop_id}")
+@log_operation("删除店铺")
 async def delete_shop(shop_id: str, current_user: User = Depends(get_current_user)):
     """删除店铺"""
     start = time.time()

@@ -80,7 +80,7 @@ export interface PriceItem {
 // 采购任务待购项
 export interface PendingItem {
   ingredient_id: string
-  name: string
+  ingredient_name: string
   shop_id: string | null
   shop_name: string
   price: number
@@ -98,6 +98,12 @@ export interface CustomItem {
   checked: boolean
 }
 
+// 黑名单项类型
+export interface RemovedItem {
+  ingredient_id: string
+  ingredient_name: string
+}
+
 // 采购任务类型
 export interface PurchaseTask {
   id: string
@@ -107,4 +113,5 @@ export interface PurchaseTask {
   pending_items: PendingItem[]
   custom_items: CustomItem[]
   removed_ingredient_ids: string[]
+  removed_items?: RemovedItem[]
 }

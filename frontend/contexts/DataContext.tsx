@@ -465,7 +465,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       pendingItems.push({
         ingredient_id: ingredientId,
-        name: ingredient.name,
+        ingredient_name: ingredient.name,
         shop_id: bestPrice?.shop_id || null,
         shop_name: bestPrice?.shop_name || "待定",
         price: bestPrice?.price || 0,
