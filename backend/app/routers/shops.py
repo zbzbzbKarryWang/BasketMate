@@ -57,8 +57,26 @@ async def update_shop(shop_id: str, shop: models.ShopUpdate, current_user: User 
 @router.delete("/{shop_id}")
 @log_operation("删除店铺")
 async def delete_shop(shop_id: str, current_user: User = Depends(get_current_user)):
-    """删除店铺"""
+    """删除店铺（原子性操作）"""
     start = time.time()
-    response = database.supabase.table("shops").delete().eq("id", shop_id).execute()
-    print(f"[耗时] DELETE /shops/{shop_id} {time.time()-start:.2f}s", flush=True)
-    return {"message": "Shop deleted"}
+    from ..logger import get_logger
+    logger = get_logger("basketmate")
+    
+    try:
+        # 调用原子性函数
+        result = database.supabase.rpc("delete_shop_cascade", {
+            "p_shop_id": shop_id
+        }).execute()
+        
+        if not result.data or not result.data[0].get("success"):
+            raise HTTPException(status_code=500, detail="删除店铺失败")
+        
+        logger.info(f"[删除店铺] 成功，affected_ingredients={result.data[0].get('affected_ingredients')}, 更新采购项={result.data[0].get('updated_count')}")
+        print(f"[耗时] DELETE /shops/{shop_id} {time.time()-start:.2f}s", flush=True)
+        return {"message": "Shop deleted", "details": result.data[0]}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[删除店铺] 失败: 参数=shop_id={shop_id}, 错误={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="删除店铺失败")

@@ -162,19 +162,49 @@ class CustomItem(BaseModel):
     checked: bool = False
 
 
+class CompletedItem(BaseModel):
+    ingredient_id: Optional[str] = None
+    ingredient_name: str
+    need_quantity: float
+    is_custom: bool = False
+    custom_id: Optional[str] = None
+
+
+class CheckedItem(BaseModel):
+    ingredient_id: Optional[str] = None
+    ingredient_name: str
+    need_quantity: float
+    is_custom: bool = False
+    custom_id: Optional[str] = None
+
+
 class PurchaseTaskResponse(BaseModel):
     id: str
-    status: str
+    status: bool  # true=活跃, false=已完成
     pending_items: List[PendingItem] = []
     custom_items: List[CustomItem] = []
+    completed_items: List[CompletedItem] = []
     removed_ingredient_ids: List[str] = []
 
 
 class RefreshRequest(BaseModel):
     locally_removed_ids: Optional[List[str]] = None
+    pending_items: Optional[List[dict]] = None
+    custom_items: Optional[List[dict]] = None
+    from_date: Optional[str] = None
 
 
 class CompletePurchaseRequest(BaseModel):
-    pending_items: List[PendingItem]
-    custom_items: List[CustomItem]
-    locally_removed_ids: List[str]
+    checked_items: List[CheckedItem] = []
+
+
+class IngredientResolveRequest(BaseModel):
+    name: str
+
+
+class DeleteItemRequest(BaseModel):
+    ingredient_id: str
+
+
+class AddToTaskRequest(BaseModel):
+    ingredient_id: str

@@ -17,7 +17,7 @@ export function BottomNav() {
   const { activeTab, setActiveTab } = useAppStore()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-10">
       <div className="flex items-center justify-between h-16 px-0.5 w-full">
         {navItems.map((item) => {
           const Icon = item.icon

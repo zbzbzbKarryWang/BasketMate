@@ -68,7 +68,7 @@ def refresh_purchase_task():
         pass
     
     if pending_items:
-        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("ingredient_name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
+        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
         try:
             database.supabase.table("shopping_list").insert(items_to_insert).execute()
         except:
@@ -103,63 +103,90 @@ async def get_plan(plan_id: str, current_user: User = Depends(get_current_user))
 @router.post("", response_model=models.PlanResponse)
 @log_operation("创建计划")
 async def create_plan(plan: models.PlanCreate, current_user: User = Depends(get_current_user)):
-    """创建新计划"""
+    """创建新计划（原子性操作）"""
     start = time.time()
-    data = {
-        "date": plan.date,
-        "breakfast_recipe_id": plan.breakfast_recipe_id,
-        "meal_ids": plan.meal_ids
-    }
-    response = database.supabase.table("plans").insert(data).execute()
-    print(f"[耗时] POST /plans 创建计划: {time.time()-start:.2f}s", flush=True)
     
-    refresh_start = time.time()
     try:
-        refresh_purchase_task()
-        print(f"[耗时] POST /plans 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+        # 调用原子性函数
+        result = database.supabase.rpc("create_plan_with_refresh", {
+            "p_date": plan.date,
+            "p_breakfast_recipe_id": plan.breakfast_recipe_id,
+            "p_meal_ids": plan.meal_ids or []
+        }).execute()
+        
+        if not result.data or not result.data[0].get("success"):
+            raise HTTPException(status_code=500, detail="创建计划失败")
+        
+        plan_id = result.data[0].get("plan_id")
+        
+        # 获取创建的计划详情
+        response = database.supabase.table("plans").select("*").eq("id", plan_id).single().execute()
+        print(f"[耗时] POST /plans 创建计划: {time.time()-start:.2f}s", flush=True)
+        logger.info(f"[创建计划] 成功，plan_id={plan_id}")
+        return response.data
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"[plans] 刷新采购清单失败: {str(e)}")
-        print(f"[耗时] POST /plans 刷新采购失败: {time.time()-refresh_start:.2f}s", flush=True)
-    print(f"[耗时] POST /plans 总耗时: {time.time()-start:.2f}s", flush=True)
-    return response.data[0]
+        logger.error(f"[创建计划] 失败: 参数=date={plan.date},breakfast={plan.breakfast_recipe_id},meals={plan.meal_ids}, 错误={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="创建计划失败")
 
 
 @router.put("/{plan_id}", response_model=models.PlanResponse)
 @log_operation("更新计划")
 async def update_plan(plan_id: str, plan: models.PlanUpdate, current_user: User = Depends(get_current_user)):
-    """更新计划"""
+    """更新计划（原子性操作）"""
     start = time.time()
-    update_data = {k: v for k, v in plan.model_dump().items() if v is not None}
-    response = database.supabase.table("plans").update(update_data).eq("id", plan_id).execute()
-    if not response.data:
-        raise HTTPException(status_code=404, detail="Plan not found")
-    print(f"[耗时] PUT /plans/{plan_id} 更新计划: {time.time()-start:.2f}s", flush=True)
     
-    refresh_start = time.time()
     try:
-        refresh_purchase_task()
-        print(f"[耗时] PUT /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+        # 调用原子性函数
+        result = database.supabase.rpc("update_plan_with_refresh", {
+            "p_plan_id": plan_id,
+            "p_date": plan.date,
+            "p_breakfast_recipe_id": plan.breakfast_recipe_id,
+            "p_meal_ids": plan.meal_ids
+        }).execute()
+        
+        if not result.data or not result.data[0].get("success"):
+            raise HTTPException(status_code=500, detail="更新计划失败")
+        
+        # 获取更新后的计划详情
+        response = database.supabase.table("plans").select("*").eq("id", plan_id).single().execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Plan not found")
+        
+        print(f"[耗时] PUT /plans/{plan_id} 更新计划: {time.time()-start:.2f}s", flush=True)
+        logger.info(f"[更新计划] 成功，plan_id={plan_id}")
+        return response.data
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"[plans] 刷新采购清单失败: {str(e)}")
-        print(f"[耗时] PUT /plans/{plan_id} 刷新采购失败: {time.time()-refresh_start:.2f}s", flush=True)
-    print(f"[耗时] PUT /plans/{plan_id} 总耗时: {time.time()-start:.2f}s", flush=True)
-    return response.data[0]
+        logger.error(f"[更新计划] 失败: 参数=plan_id={plan_id},date={plan.date},breakfast={plan.breakfast_recipe_id},meals={plan.meal_ids}, 错误={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="更新计划失败")
 
 
 @router.delete("/{plan_id}")
 @log_operation("删除计划")
 async def delete_plan(plan_id: str, current_user: User = Depends(get_current_user)):
-    """删除计划"""
+    """删除计划（原子性操作）"""
     start = time.time()
-    response = database.supabase.table("plans").delete().eq("id", plan_id).execute()
-    print(f"[耗时] DELETE /plans/{plan_id} 删除计划: {time.time()-start:.2f}s", flush=True)
     
-    refresh_start = time.time()
     try:
-        refresh_purchase_task()
-        print(f"[耗时] DELETE /plans/{plan_id} 刷新采购: {time.time()-refresh_start:.2f}s", flush=True)
+        # 调用原子性函数
+        result = database.supabase.rpc("delete_plan_with_refresh", {
+            "p_plan_id": plan_id
+        }).execute()
+        
+        if not result.data or not result.data[0].get("success"):
+            raise HTTPException(status_code=500, detail="删除计划失败")
+        
+        print(f"[耗时] DELETE /plans/{plan_id} 删除计划: {time.time()-start:.2f}s", flush=True)
+        logger.info(f"[删除计划] 成功，plan_id={plan_id}，移除待购项={result.data[0].get('items_removed')}")
+        return {"message": "Plan deleted", "details": result.data[0]}
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"[plans] 刷新采购清单失败: {str(e)}")
-        print(f"[耗时] DELETE /plans/{plan_id} 刷新采购失败: {time.time()-refresh_start:.2f}s", flush=True)
-    print(f"[耗时] DELETE /plans/{plan_id} 总耗时: {time.time()-start:.2f}s", flush=True)
-    return {"message": "Plan deleted"}
+        logger.error(f"[删除计划] 失败: 参数=plan_id={plan_id}, 错误={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="删除计划失败")

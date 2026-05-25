@@ -20,9 +20,7 @@ export default function App() {
       {activeTab === 'inventory' && <InventoryPage />}
       {activeTab === 'recipes' && <RecipesPage />}
       {activeTab === 'price' && <PricePage />}
-      <footer className="h-16 w-full bg-white border-t">
-        <BottomNav />
-      </footer>
+      <BottomNav />
     </div>
   )
 }

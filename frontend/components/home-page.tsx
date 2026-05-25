@@ -109,7 +109,7 @@ export function HomePage() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 pb-12">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-16">
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">

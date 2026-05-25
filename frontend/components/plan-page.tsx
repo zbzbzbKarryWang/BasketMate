@@ -339,7 +339,7 @@ export function PlanPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 pb-12 space-y-3">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-16 space-y-3">
         {sortedPlans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Calendar className="w-12 h-12 mb-3 opacity-50" />

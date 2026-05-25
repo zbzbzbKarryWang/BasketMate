@@ -32,7 +32,7 @@ async def get_recipes(
     for recipe in recipes:
         ingredients = recipe.get("ingredients") or []
         for ing in ingredients:
-            ing_id = ing.get("ingredient_id")
+            ing_id = ing.get("ingredientId") or ing.get("ingredient_id")
             if ing_id:
                 ids_set.add(ing_id)
 
@@ -47,7 +47,7 @@ async def get_recipes(
     for recipe in recipes:
         filled_ingredients = []
         for ing in (recipe.get("ingredients") or []):
-            ing_id = ing.get("ingredient_id")
+            ing_id = ing.get("ingredientId") or ing.get("ingredient_id")
             filled_ingredients.append({
                 "ingredient_id": ing_id,
                 "quantity": ing.get("quantity", 0),
@@ -69,16 +69,16 @@ async def get_recipe(recipe_id: str):
 
     recipe = resp.data[0]
     ingredients = recipe.get("ingredients") or []
-    ids_set = {ing.get("ingredient_id") for ing in ingredients if ing.get("ingredient_id")}
+    ids_set = {ing.get("ingredientId") or ing.get("ingredient_id") for ing in ingredients}
 
     id_name_map = {}
     if ids_set:
         ing_resp = db.table("ingredients").select("id, name").in_("id", list(ids_set)).execute()
         id_name_map = {ing["id"]: ing["name"] for ing in (ing_resp.data or [])}
-
+        
     filled_ingredients = []
     for ing in ingredients:
-        ing_id = ing.get("ingredient_id")
+        ing_id = ing.get("ingredientId") or ing.get("ingredient_id")
         filled_ingredients.append({
             "ingredient_id": ing_id,
             "quantity": ing.get("quantity", 0),

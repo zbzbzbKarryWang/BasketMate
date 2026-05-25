@@ -195,7 +195,7 @@ export function RecipesPage() {
         </div>
       </header>
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-12">
+      <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-16">
         {/* 搜索框 */}
         <div className="mb-4">
           <div className="relative">
