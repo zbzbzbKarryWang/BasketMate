@@ -22,7 +22,17 @@ async def log_request_time(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     duration_ms = int((time.time() - start_time) * 1000)
-    logger.info(f'"{request.method} {request.url.path} {response.status_code} {duration_ms}ms"')
+    
+    status_code = response.status_code
+    log_message = f'"{request.method} {request.url.path} {status_code} {duration_ms}ms"'
+    
+    if status_code >= 500:
+        logger.error(log_message)
+    elif status_code >= 400:
+        logger.warning(log_message)
+    else:
+        logger.info(log_message)
+    
     return response
 
 app.add_middleware(

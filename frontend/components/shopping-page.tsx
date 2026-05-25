@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Plus, Check, ShoppingCart, ChevronDown, ChevronUp, Upload } from "lucide-react"
+import { Plus, Check, ShoppingCart, ChevronDown, ChevronUp, Upload, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -19,19 +19,18 @@ import { useData } from "@/contexts/DataContext"
 import type { Recipe, PendingItem, CustomItem } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
+export interface CompletedItem {
+  ingredient_id: string | null
+  ingredient_name: string
+  need_quantity: number
+  is_custom: boolean
+  custom_id: string | null
+}
+
 export function ShoppingPage() {
   const {
-    activePurchaseTask,
-    mealPlans,
     inventory,
-    priceList,
-    shops,
     recalculateAndPersistPurchaseTask,
-    addToPurchaseTask,
-    completePurchase,
-    clearPurchaseTask,
-    addIngredient,
-    updateIngredient,
   } = useData()
 
   const [showRecipeDrawer, setShowRecipeDrawer] = useState(false)
@@ -42,9 +41,10 @@ export function ShoppingPage() {
   
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([])
   const [customItems, setCustomItems] = useState<CustomItem[]>([])
-  const [locallyRemovedIds, setLocallyRemovedIds] = useState<Set<string>>(new Set())
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [completedItems, setCompletedItems] = useState<CompletedItem[]>([])
+  const [removedIngredientIds, setRemovedIngredientIds] = useState<string[]>([])
   
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showCompleteSuccess, setShowCompleteSuccess] = useState(false)
   const [showCompleteError, setShowCompleteError] = useState(false)
@@ -90,16 +90,34 @@ export function ShoppingPage() {
         }
         
         try {
-          const existingItem = inventory.find(item => 
-            item.name.toLowerCase() === name.toLowerCase()
-          )
-          
-          if (existingItem) {
-            await updateIngredient(existingItem.id, existingItem.quantity + quantity, { addedAt: new Date() })
-          } else {
-            await addIngredient({ name, quantity })
+          const response = await fetch('/api/proxy/ingredients', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          })
+          if (response.ok) {
+            const inventoryData = await response.json()
+            const existingItem = inventoryData.find((item: any) => 
+              item.name.toLowerCase() === name.toLowerCase()
+            )
+            
+            if (existingItem) {
+              await fetch(`/api/proxy/ingredients/${existingItem.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  quantity: existingItem.quantity + quantity,
+                  added_at: new Date().toISOString()
+                })
+              })
+            } else {
+              await fetch('/api/proxy/ingredients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, quantity })
+              })
+            }
+            successCount++
           }
-          successCount++
         } catch {
           errorCount++
         }
@@ -107,224 +125,231 @@ export function ShoppingPage() {
       
       setImportResult({ success: successCount, failed: errorCount })
       setShowImportResult(true)
-    } catch (err) {
-      console.error('CSV upload error:', err)
+      
+      await recalculateAndPersistPurchaseTask()
+      await refreshTask()
     } finally {
       setUploading(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      event.target.value = ""
     }
-  }, [inventory, addIngredient, updateIngredient])
+  }, [recalculateAndPersistPurchaseTask])
+
+  const refreshTask = useCallback(async () => {
+    try {
+      const response = await fetch('/api/shopping/task')
+      if (response.ok) {
+        const data = await response.json()
+        setPendingItems(data.pending_items || [])
+        setCustomItems(data.custom_items || [])
+        setCompletedItems(data.completed_items || [])
+        setRemovedIngredientIds(data.removed_ingredient_ids || [])
+        
+        const allItems = [...(data.pending_items || []), ...(data.custom_items || [])]
+        const stores = new Set(allItems.map(item => item.shop_name || "待定"))
+        setExpandedStores(stores)
+      }
+    } catch (error) {
+      console.error('Failed to fetch purchase task:', error)
+    }
+  }, [])
 
   useEffect(() => {
-    if (activePurchaseTask) {
-      setPendingItems(activePurchaseTask.pending_items || [])
-      setCustomItems(activePurchaseTask.custom_items || [])
-      setLocallyRemovedIds(new Set())
-      setHasUnsavedChanges(false)
-    } else {
-      setPendingItems([])
-      setCustomItems([])
-      setLocallyRemovedIds(new Set())
-      setHasUnsavedChanges(false)
-    }
-  }, [activePurchaseTask])
+    refreshTask()
+  }, [refreshTask])
 
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault()
-        e.returnValue = ""
-      }
-    }
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
-  }, [hasUnsavedChanges])
-
-  useEffect(() => {
-    const storeSet = new Set<string>()
-    pendingItems.forEach(item => {
-      storeSet.add(item.shop_name || "待定")
-    })
-    customItems.forEach(item => {
-      storeSet.add(item.shop_name || "待定")
-    })
-    setExpandedStores(storeSet)
-  }, [pendingItems, customItems])
-
-  const noPurchasePlan = !activePurchaseTask || 
-    (pendingItems.length === 0 && customItems.length === 0)
-
-  const allItems = [...pendingItems, ...customItems.map(item => ({
-    ...item,
-    ingredient_id: `custom-${item.id}`,
-    shop_id: null,
-    price: 0,
-    unit: "",
-    checked: item.checked
-  }))]
-  const visibleItems = allItems.filter(item => !locallyRemovedIds.has(item.ingredient_id))
-  const checkedCount = visibleItems.filter(item => item.checked).length
-  const listEmpty = visibleItems.length === 0
-  const removedItems = allItems.filter(item => locallyRemovedIds.has(item.ingredient_id))
-  const checkedItems = visibleItems.filter(item => item.checked)
-
-  const groupedByStore = visibleItems.reduce(
-    (acc, item) => {
-      const store = item.shop_name || "待定"
-      if (!acc[store]) acc[store] = []
-      acc[store].push(item)
-      return acc
-    },
-    {} as Record<string, PendingItem[]>
-  )
-
-  const handleQuantityChange = (ingredientId: string, delta: number) => {
-    setPendingItems(prev => prev.map(item => {
-      if (item.ingredient_id === ingredientId) {
-        return {
-          ...item,
-          need_quantity: Math.max(1, item.need_quantity + delta)
-        }
-      }
-      return item
-    }))
+  const handleToggleCheck = useCallback((ingredientId: string) => {
+    setPendingItems(prev => prev.map(item => 
+      item.ingredient_id === ingredientId 
+        ? { ...item, checked: !item.checked }
+        : item
+    ))
+    setCustomItems(prev => prev.map(item => 
+      `custom-${item.id}` === ingredientId 
+        ? { ...item, checked: !item.checked }
+        : item
+    ))
     setHasUnsavedChanges(true)
-  }
+  }, [])
 
-  const handleQuantityInput = (ingredientId: string, value: number) => {
-    if (!isNaN(value) && value >= 0) {
-      setPendingItems(prev => prev.map(item => {
-        if (item.ingredient_id === ingredientId) {
-          return {
-            ...item,
-            need_quantity: value
-          }
-        }
-        return item
-      }))
-      setHasUnsavedChanges(true)
-    }
-  }
-
-  const handleCustomQuantityChange = (id: string, delta: number) => {
-    setCustomItems(prev => prev.map(item => {
-      if (item.id === id) {
-        return {
-          ...item,
-          need_quantity: Math.max(1, item.need_quantity + delta)
-        }
-      }
-      return item
-    }))
+  const handleQuantityChange = useCallback((ingredientId: string, delta: number) => {
+    setPendingItems(prev => prev.map(item => 
+      item.ingredient_id === ingredientId
+        ? { ...item, need_quantity: Math.max(0.1, item.need_quantity + delta) }
+        : item
+    ))
     setHasUnsavedChanges(true)
-  }
+  }, [])
 
-  const handleCustomQuantityInput = (id: string, value: number) => {
-    if (!isNaN(value) && value >= 0) {
-      setCustomItems(prev => prev.map(item => {
-        if (item.id === id) {
-          return {
-            ...item,
-            need_quantity: value
-          }
-        }
-        return item
-      }))
-      setHasUnsavedChanges(true)
-    }
-  }
-
-  const handleToggleCheck = (ingredientId: string) => {
-    if (ingredientId.startsWith("custom-")) {
-      const customId = ingredientId.replace("custom-", "")
-      setCustomItems(prev => prev.map(item => {
-        if (item.id === customId) {
-          return { ...item, checked: !item.checked }
-        }
-        return item
-      }))
-    } else {
-      setPendingItems(prev => prev.map(item => {
-        if (item.ingredient_id === ingredientId) {
-          return { ...item, checked: !item.checked }
-        }
-        return item
-      }))
-    }
+  const handleQuantityInput = useCallback((ingredientId: string, value: number) => {
+    setPendingItems(prev => prev.map(item => 
+      item.ingredient_id === ingredientId
+        ? { ...item, need_quantity: Math.max(0.1, value) }
+        : item
+    ))
     setHasUnsavedChanges(true)
-  }
+  }, [])
 
-  const handleDelete = (ingredientId: string) => {
-    setLocallyRemovedIds(prev => new Set([...prev, ingredientId]))
+  const handleCustomQuantityChange = useCallback((customId: string, delta: number) => {
+    setCustomItems(prev => prev.map(item => 
+      item.id === customId
+        ? { ...item, need_quantity: Math.max(0.1, item.need_quantity + delta) }
+        : item
+    ))
     setHasUnsavedChanges(true)
-  }
+  }, [])
 
-  const handleAddFromRecipe = async (recipes: Recipe[]) => {
-    await recalculateAndPersistPurchaseTask(Array.from(locallyRemovedIds))
-    setLocallyRemovedIds(new Set())
-    setHasUnsavedChanges(false)
-    setShowRecipeDrawer(false)
-  }
-
-  const confirmEphemeralAdd = () => {
-    const name = ephemeralName.trim()
-    if (!name) return
-    const qty = Math.max(1, Math.floor(ephemeralQty))
-    
-    const newItem: CustomItem = {
-      id: `temp-${Date.now()}`,
-      name,
-      shop_name: "待定",
-      need_quantity: qty,
-      checked: false
-    }
-    
-    setCustomItems(prev => [...prev, newItem])
+  const handleCustomQuantityInput = useCallback((customId: string, value: number) => {
+    setCustomItems(prev => prev.map(item => 
+      item.id === customId
+        ? { ...item, need_quantity: Math.max(0.1, value) }
+        : item
+    ))
     setHasUnsavedChanges(true)
-    setShowAddItemDialog(false)
-    setEphemeralName("")
-    setEphemeralQty(1)
-    setShowAddItemSuccess(true)
-  }
+  }, [])
 
-  const handleComplete = async () => {
+  const handleDelete = useCallback(async (ingredientId: string) => {
     setSaving(true)
     try {
-      await completePurchase(
-        pendingItems,
-        customItems,
-        Array.from(locallyRemovedIds)
-      )
-      setShowCompleteSuccess(true)
+      const response = await fetch('/api/shopping/task/delete-item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredient_id: ingredientId })
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setPendingItems(data.pending_items || [])
+        setCustomItems(data.custom_items || [])
+        setCompletedItems(data.completed_items || [])
+        setRemovedIngredientIds(data.removed_ingredient_ids || [])
+      }
     } catch (error) {
-      console.error('Failed to complete shopping:', error)
+      console.error('Failed to delete item:', error)
+    } finally {
+      setSaving(false)
+    }
+  }, [])
+
+  const handleComplete = useCallback(async () => {
+    setSaving(true)
+    try {
+      const allItems = [...pendingItems, ...customItems]
+      const checkedItems = allItems.filter(item => item.checked)
+      
+      const payload = checkedItems.map(item => {
+        const isCustom = 'custom-' === item.ingredient_id.substring(0, 7)
+        return {
+          ingredient_id: isCustom ? null : item.ingredient_id,
+          ingredient_name: isCustom ? item.name : (item as PendingItem).ingredient_name,
+          need_quantity: item.need_quantity,
+          is_custom: isCustom,
+          custom_id: isCustom ? item.ingredient_id.replace("custom-", "") : null
+        }
+      })
+      
+      const response = await fetch('/api/shopping/task/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checked_items: payload })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPendingItems(data.pending_items || [])
+        setCustomItems(data.custom_items || [])
+        setCompletedItems(data.completed_items || [])
+        setRemovedIngredientIds(data.removed_ingredient_ids || [])
+        setHasUnsavedChanges(false)
+        setShowCompleteSuccess(true)
+      } else {
+        setShowCompleteError(true)
+      }
+    } catch (error) {
+      console.error('Failed to complete purchase:', error)
       setShowCompleteError(true)
     } finally {
       setSaving(false)
     }
-  }
+  }, [pendingItems, customItems])
 
-  const handleClear = async () => {
+  const handleClear = useCallback(async () => {
     setSaving(true)
     try {
-      await clearPurchaseTask(pendingItems, customItems)
-      setPendingItems([])
-      setCustomItems([])
-      setLocallyRemovedIds(new Set())
-      setHasUnsavedChanges(false)
-      setShowClearConfirm(false)
-      setShowClearSuccess(true)
+      const response = await fetch('/api/shopping/task/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPendingItems(data.pending_items || [])
+        setCustomItems(data.custom_items || [])
+        setCompletedItems(data.completed_items || [])
+        setRemovedIngredientIds(data.removed_ingredient_ids || [])
+        setShowClearSuccess(true)
+      } else {
+        setShowClearError(true)
+      }
     } catch (error) {
-      console.error('Failed to clear shopping:', error)
+      console.error('Failed to clear task:', error)
       setShowClearError(true)
     } finally {
       setSaving(false)
+      setShowClearConfirm(false)
     }
-  }
+  }, [])
 
+  const handleAddCustomItem = useCallback(() => {
+    if (!ephemeralName.trim()) return
+    
+    const newItem: CustomItem = {
+      id: `custom-${Date.now()}`,
+      name: ephemeralName.trim(),
+      shop_name: "待定",
+      need_quantity: ephemeralQty,
+      checked: false
+    }
+    
+    setCustomItems(prev => [...prev, newItem])
+    setEphemeralName("")
+    setEphemeralQty(1)
+    setShowAddItemDialog(false)
+    setShowAddItemSuccess(true)
+  }, [ephemeralName, ephemeralQty])
 
+  const handleAddFromRecipe = useCallback(async (recipe: Recipe) => {
+    try {
+      for (const ing of recipe.ingredients) {
+        const existingIng = inventory.find(i => i.id === ing.ingredient_id)
+        if (existingIng && existingIng.quantity <= 0) {
+          await fetch('/api/shopping/task/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ingredient_id: ing.ingredient_id })
+          })
+        }
+      }
+      await refreshTask()
+    } catch (error) {
+      console.error('Failed to add from recipe:', error)
+    }
+    setShowRecipeDrawer(false)
+  }, [inventory, refreshTask])
+
+  const visibleItems = [...pendingItems, ...customItems]
+  const checkedCount = visibleItems.filter(item => item.checked).length
+  const listEmpty = visibleItems.length === 0
+
+  // 判断是否显示"今日无采购任务"
+  const showEmptyState = listEmpty && completedItems.length === 0 && removedIngredientIds.length === 0
+
+  const groupedByStore: Record<string, (PendingItem | CustomItem)[]> = {}
+  visibleItems.forEach(item => {
+    const store = item.shop_name || "待定"
+    if (!groupedByStore[store]) {
+      groupedByStore[store] = []
+    }
+    groupedByStore[store].push(item)
+  })
 
   return (
     <div className="flex flex-col h-full">
@@ -349,119 +374,39 @@ export function ShoppingPage() {
               className="hidden"
             />
             <Button
-              size="sm"
-              variant="outline"
+              variant="ghost"
+              size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="gap-1 px-2"
             >
               <Upload className="w-4 h-4" />
-              {uploading ? '导入中' : '导入'}
             </Button>
             <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setEphemeralName("")
-                setEphemeralQty(1)
-                setShowAddItemDialog(true)
-              }}
-              className="gap-1 px-2"
-            >
-              <Plus className="w-4 h-4" />
-              物品
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
+              variant="ghost"
+              size="icon"
               onClick={() => setShowRecipeDrawer(true)}
-              className="gap-1 px-2"
             >
               <Plus className="w-4 h-4" />
-              菜
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 pb-48 space-y-4">
-        {listEmpty ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <ShoppingCart className="w-12 h-12 mb-3 opacity-50" />
-            {noPurchasePlan ? (
-              <>
-                <p className="text-sm font-medium text-foreground">今日无采购任务</p>
-                <p className="text-xs mt-1 text-center px-4">
-                  今日没有需要采购的食材。仍可通过「加菜」「加物品」自行备忘。
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm">采购清单为空</p>
-                <Button
-                  variant="link"
-                  onClick={() => setShowRecipeDrawer(true)}
-                  className="mt-2"
-                >
-                  从菜谱添加食材
-                </Button>
-              </>
-            )}
+      <main className="flex-1 overflow-y-auto p-4 pb-32">
+        {listEmpty && completedItems.length === 0 && removedIngredientIds.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+              <ShoppingCart className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-lg font-medium mb-2">今日无采购任务</h2>
+            <p className="text-sm text-muted-foreground mb-4">添加菜谱到今日计划，系统会自动生成采购清单</p>
+            <Button onClick={() => setShowRecipeDrawer(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              添加菜谱
+            </Button>
           </div>
         ) : (
           <>
-            {removedItems.length > 0 && (
-              <Card className="shadow-sm border-red-100">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-red-600">
-                    已加入黑名单 ({removedItems.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {removedItems.map((item) => {
-                      const isCustom = item.ingredient_id.startsWith("custom-")
-                      return (
-                        <span
-                          key={item.ingredient_id}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-50 text-red-600 line-through"
-                        >
-                          {isCustom ? item.name : item.ingredient_name}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {checkedItems.length > 0 && (
-              <Card className="shadow-sm border-green-100">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
-                    <Check className="w-4 h-4" />
-                    本次已采购 ({checkedItems.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {checkedItems.map((item) => {
-                      const isCustom = item.ingredient_id.startsWith("custom-")
-                      return (
-                        <span
-                          key={item.ingredient_id}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-600"
-                        >
-                          {isCustom ? item.name : item.ingredient_name}
-                          <span className="text-[10px] opacity-70">×{item.need_quantity}</span>
-                        </span>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {Object.entries(groupedByStore).map(([store, items]) => {
               const storeItemsCount = items.length
               const isExpanded = expandedStores.has(store)
@@ -481,7 +426,7 @@ export function ShoppingPage() {
               }
 
               return (
-                <Card key={store} className="shadow-sm">
+                <Card key={store} className="shadow-sm mb-3">
                   <CardHeader className="pb-2 cursor-pointer" onClick={toggleExpand}>
                     <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
                       <span>{store}</span>
@@ -499,10 +444,9 @@ export function ShoppingPage() {
                     <CardContent>
                       <div className="space-y-2">
                         {items.map((item) => {
-                          const isCustom = item.ingredient_id.startsWith("custom-")
-                          const currentQty = isCustom
-                            ? (customItems.find(c => c.id === item.ingredient_id.replace("custom-", ""))?.need_quantity || 0)
-                            : item.need_quantity
+                          const isCustom = 'custom-' === item.ingredient_id.substring(0, 7)
+                          const displayName = isCustom ? item.name : (item as PendingItem).ingredient_name
+                          const currentQty = item.need_quantity
 
                           return (
                             <div
@@ -528,23 +472,23 @@ export function ShoppingPage() {
                               </button>
 
                               <div
-                              className={cn(
-                                "flex-1 text-sm min-w-0",
-                                item.checked && "line-through text-muted-foreground"
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="truncate">{isCustom ? item.name : item.ingredient_name}</span>
-                                {isCustom && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
-                                    临时
-                                  </span>
+                                className={cn(
+                                  "flex-1 text-sm min-w-0",
+                                  item.checked && "line-through text-muted-foreground"
                                 )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate">{displayName}</span>
+                                  {isCustom && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 shrink-0">
+                                      临时
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
 
                               <div className="text-xs text-muted-foreground w-14 text-center shrink-0">
-                                {item.price > 0 ? `¥${item.price}` : "-"}
+                                {(item as PendingItem).price > 0 ? `¥${(item as PendingItem).price}` : "-"}
                               </div>
 
                               <div className="flex items-center gap-0.5 shrink-0 tabular-nums">
@@ -584,6 +528,15 @@ export function ShoppingPage() {
                                   +
                                 </button>
                               </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(item.ingredient_id)}
+                                className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                title="删除此项"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
                             </div>
                           )
                         })}
@@ -593,6 +546,57 @@ export function ShoppingPage() {
                 </Card>
               )
             })}
+
+            {removedIngredientIds.length > 0 && (
+              <Card className="shadow-sm border-red-100 py-3 mt-3">
+                <CardHeader className="pb-1 pt-0">
+                  <CardTitle className="text-sm font-medium text-red-600 flex items-center gap-2">
+                    <X className="w-4 h-4" />
+                    已加入黑名单 ({removedIngredientIds.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex flex-wrap gap-2">
+                    {removedIngredientIds.map((id) => {
+                      const invItem = inventory.find(i => i.id === id)
+                      const name = invItem?.name || (id.startsWith("custom-") ? `临时物品(${id})` : id)
+                      return (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-red-50 text-red-600 line-through"
+                        >
+                          {name}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {completedItems.length > 0 && (
+              <Card className="shadow-sm border-green-100 py-3 mt-3">
+                <CardHeader className="pb-1 pt-0">
+                  <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    本次已采购 ({completedItems.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex flex-wrap gap-2">
+                    {completedItems.map((item) => (
+                      <span
+                        key={item.is_custom ? item.custom_id : item.ingredient_id}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-50 text-green-600"
+                      >
+                        {item.ingredient_name}
+                        <span className="text-[10px] opacity-70">×{item.need_quantity}</span>
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </main>
@@ -600,16 +604,16 @@ export function ShoppingPage() {
       {!listEmpty && (
         <div className="fixed bottom-20 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-background to-transparent pt-8">
           <div className="max-w-md mx-auto">
-            <div className="flex gap-3">
-              <LoadingButton
-                className="flex-1 gap-2 bg-[#7FC58E] hover:bg-[#6FB07E] text-white"
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
                 size="lg"
+                className="flex-1"
                 onClick={() => setShowClearConfirm(true)}
-                isLoading={saving}
-                loadingText="清空中..."
+                disabled={saving}
               >
                 清空剩余项
-              </LoadingButton>
+              </Button>
               <LoadingButton
                 className="flex-1 gap-2"
                 size="lg"
@@ -629,7 +633,7 @@ export function ShoppingPage() {
       <RecipeDrawer
         isOpen={showRecipeDrawer}
         onClose={() => setShowRecipeDrawer(false)}
-        onConfirm={(r) => void handleAddFromRecipe(r)}
+        onConfirm={handleAddFromRecipe}
         initialSelected={[]}
       />
 
@@ -649,103 +653,159 @@ export function ShoppingPage() {
             />
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground shrink-0">数量</span>
-              <div className="flex items-center gap-1 tabular-nums">
-                <button
-                  type="button"
-                  className="text-sm text-muted-foreground hover:text-foreground px-2 py-1"
-                  onClick={() =>
-                    setEphemeralQty((q) => Math.max(1, Math.floor(q) - 1))
-                  }
-                >
-                  −
-                </button>
-                <span className="w-8 text-center text-sm">{ephemeralQty}</span>
-                <button
-                  type="button"
-                  className="text-sm text-muted-foreground hover:text-foreground px-2 py-1"
-                  onClick={() => setEphemeralQty((q) => Math.floor(q) + 1)}
-                >
-                  +
-                </button>
-              </div>
+              <input
+                type="number"
+                value={ephemeralQty}
+                onChange={(e) => setEphemeralQty(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+                className="w-20 text-center text-sm border border-border rounded px-2"
+              />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItemDialog(false)}>
               取消
             </Button>
-            <Button onClick={confirmEphemeralAdd}>
-              确认
+            <Button onClick={handleAddCustomItem} disabled={!ephemeralName.trim()}>
+              添加
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCompleteSuccess} onOpenChange={setShowCompleteSuccess}>
+        <DialogContent className="sm:max-w-sm">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">采购完成</h3>
+            <p className="text-sm text-muted-foreground">已更新库存</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowCompleteSuccess(false)} className="w-full">
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCompleteError} onOpenChange={setShowCompleteError}>
+        <DialogContent className="sm:max-w-sm">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">操作失败</h3>
+            <p className="text-sm text-muted-foreground">请稍后重试</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowCompleteError(false)} className="w-full">
+              确定
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ConfirmModal
-        isOpen={showCompleteSuccess}
-        title="采购成功"
-        message="采购食材数据更新成功"
-        onConfirm={() => {
-          setShowCompleteSuccess(false)
-        }}
-        onCancel={() => {
-          setShowCompleteSuccess(false)
-        }}
-        showCancelButton={false}
-      />
-
-      <ConfirmModal
-        isOpen={showCompleteError}
-        title="采购失败"
-        message="采购食材数据更新失败"
-        onConfirm={() => setShowCompleteError(false)}
-        onCancel={() => setShowCompleteError(false)}
-        showCancelButton={false}
-      />
-
-      <ConfirmModal
-        isOpen={showClearConfirm}
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
         title="确认清空"
-        message="确定要清空所有剩余项吗？此操作不可撤销。"
-        onConfirm={() => void handleClear()}
-        onCancel={() => setShowClearConfirm(false)}
+        description="确定要清空所有待购项吗？清空后这些项将被加入黑名单，不会重新出现。"
+        onConfirm={handleClear}
+        confirmText="清空"
+        cancelText="取消"
       />
 
-      <ConfirmModal
-        isOpen={showClearSuccess}
-        title="清空成功"
-        message="清空完成"
-        onConfirm={() => setShowClearSuccess(false)}
-        onCancel={() => setShowClearSuccess(false)}
-        showCancelButton={false}
-      />
+      <Dialog open={showClearSuccess} onOpenChange={setShowClearSuccess}>
+        <DialogContent className="sm:max-w-sm">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">清空完成</h3>
+            <p className="text-sm text-muted-foreground">所有待购项已加入黑名单</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowClearSuccess(false)} className="w-full">
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <ConfirmModal
-        isOpen={showClearError}
-        title="清空失败"
-        message="清空失败，请重试"
-        onConfirm={() => setShowClearError(false)}
-        onCancel={() => setShowClearError(false)}
-        showCancelButton={false}
-      />
+      <Dialog open={showClearError} onOpenChange={setShowClearError}>
+        <DialogContent className="sm:max-w-sm">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">操作失败</h3>
+            <p className="text-sm text-muted-foreground">请稍后重试</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowClearError(false)} className="w-full">
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <ConfirmModal
-        isOpen={showAddItemSuccess}
-        title="提示"
-        message="物品已添加"
-        onConfirm={() => setShowAddItemSuccess(false)}
-        onCancel={() => setShowAddItemSuccess(false)}
-        showCancelButton={false}
-      />
+      <Dialog open={showAddItemSuccess} onOpenChange={setShowAddItemSuccess}>
+        <DialogContent className="sm:max-w-sm">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">添加成功</h3>
+            <p className="text-sm text-muted-foreground">已添加到采购清单</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowAddItemSuccess(false)} className="w-full">
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <ConfirmModal
-        isOpen={showImportResult}
-        title="导入结果"
-        message={`导入成功：${importResult.success} 项\n导入失败：${importResult.failed} 项`}
-        onConfirm={() => setShowImportResult(false)}
-        onCancel={() => setShowImportResult(false)}
-        showCancelButton={false}
-      />
+      <Dialog open={showImportResult} onOpenChange={setShowImportResult}>
+        <DialogContent className="sm:max-w-sm">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">导入完成</h3>
+            <p className="text-sm text-muted-foreground">
+              成功: {importResult.success} 条，失败: {importResult.failed} 条
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowImportResult(false)} className="w-full">
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm shadow-lg">
+          有未保存的更改
+        </div>
+      )}
+
+      <div className="fixed bottom-0 left-0 right-0 h-20 bg-background border-t flex items-center justify-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            void recalculateAndPersistPurchaseTask()
+            void refreshTask()
+          }}
+          className="mb-4"
+        >
+          刷新采购清单
+        </Button>
+      </div>
     </div>
   )
 }

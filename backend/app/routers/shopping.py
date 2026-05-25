@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 import time
 from .. import models
@@ -15,35 +15,367 @@ logger = get_logger("basketmate")
 router = APIRouter(prefix="/api/shopping", tags=["shopping"])
 
 
+def update_pending_items_for_plan(plan_id: str, is_deleting: bool = False):
+    """增量更新采购任务 - 只重新计算指定计划的食材"""
+    import time
+    start = time.time()
+    logger.info(f"[增量更新] 开始处理计划 {plan_id}, 删除模式={is_deleting}")
+    
+    try:
+        if is_deleting:
+            # 删除操作
+            shopping_service.update_pending_items_with_sources(
+                database.supabase,
+                plan_id,
+                'deleted'
+            )
+        else:
+            # 创建或更新操作：先计算该计划的需求，再更新
+            new_requirements = shopping_service.compute_pending_items_for_plan(
+                database.supabase,
+                plan_id
+            )
+            logger.info(f"[增量更新] 计划 {plan_id} 的食材需求: {new_requirements}")
+            
+            shopping_service.update_pending_items_with_sources(
+                database.supabase,
+                plan_id,
+                'updated',  # 使用 'updated' 处理创建和更新
+                new_requirements
+            )
+        
+        total_ms = int((time.time() - start) * 1000)
+        logger.info(f"[增量更新] 计划 {plan_id} 成功，耗时 {total_ms}ms")
+    except Exception as e:
+        logger.error(f"[增量更新] 计划 {plan_id} 失败: {str(e)}")
+        # 失败时回退到全量刷新
+        from ..routers.plans import refresh_purchase_task
+        refresh_purchase_task()
+        total_ms = int((time.time() - start) * 1000)
+        logger.info(f"[增量更新] 计划 {plan_id} 回退到全量刷新，总耗时 {total_ms}ms")
+
+
 @router.get("/task", response_model=models.PurchaseTaskResponse)
 @log_operation("获取采购任务")
 async def get_active_task(current_user: User = Depends(get_current_user)):
-    """获取当前活跃的采购任务（自动刷新）"""
+    """获取当前活跃的采购任务，返回所有字段包括 completed_items 和 removed_ingredient_ids"""
     start = time.time()
     
-    do_refresh()
+    today = datetime.now().strftime("%Y-%m-%d")
     
-    response = database.supabase.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-    logger.info(f"[获取采购任务] 已刷新，待购项数量: {len(response.data.get('pending_items', []) if response and response.data else [])}")
-    print(f"[耗时] GET /shopping/task {time.time()-start:.2f}s", flush=True)
-    if not response or not response.data:
+    # 一次性查询所有需要的数据
+    active_task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    future_plans = database.supabase.table("plans").select("*").gte("date", today).execute()
+    
+    # 如果 active_task 为空 → 返回空数据
+    if not active_task or not active_task.data:
+        logger.info(f"[获取采购任务] 没有找到活动任务")
+        print(f"[耗时] GET /shopping/task {time.time()-start:.2f}s", flush=True)
         return {
             "id": "",
-            "status": "active",
+            "status": False,  # false=已完成
             "pending_items": [],
             "custom_items": [],
+            "completed_items": [],
             "removed_ingredient_ids": []
         }
-    return response.data
+    
+    task_data = active_task.data
+    task_id = task_data["id"]
+    pending_items = task_data.get("pending_items", [])
+    custom_items = task_data.get("custom_items", [])
+    completed_items = task_data.get("completed_items", [])
+    removed_ingredient_ids = set(task_data.get("removed_ingredient_ids", []))
+    
+    # 如果 future_plans 为空
+    if not future_plans or not future_plans.data:
+        logger.info(f"[获取采购任务] 没有未来计划，清空采购任务")
+        
+        # 将所有 pending_items 的 ingredient_id 加入黑名单
+        for item in pending_items:
+            ing_id = item.get("ingredient_id")
+            if ing_id:
+                removed_ingredient_ids.add(ing_id)
+        
+        # 将所有 custom_items 的 id 加入黑名单
+        for item in custom_items:
+            custom_id = item.get("id")
+            if custom_id:
+                removed_ingredient_ids.add(f"custom-{custom_id}")
+        
+        # 清空 pending_items 和 custom_items，标记任务为已完成
+        database.supabase.table("purchase_tasks").update({
+            "pending_items": [],
+            "custom_items": [],
+            "completed_items": [],  # 清空已采购项
+            "removed_ingredient_ids": [],  # 清空黑名单
+            "status": False,  # false=已完成
+            "completed_at": datetime.now().isoformat()
+        }).eq("id", task_id).execute()
+        
+        print(f"[耗时] GET /shopping/task {time.time()-start:.2f}s", flush=True)
+        return {
+            "id": task_id,
+            "status": False,  # false=已完成
+            "pending_items": [],
+            "custom_items": [],
+            "completed_items": [],  # 返回空
+            "removed_ingredient_ids": []  # 返回空
+        }
+    
+    # 如果 future_plans 不为空，过滤 pending_items
+    future_plan_ids = {plan["id"] for plan in (future_plans.data or [])}
+    logger.info(f"[获取采购任务] 未来计划数量: {len(future_plan_ids)}")
+    
+    # 过滤 pending_items，只保留与 future_plans 相关的项
+    filtered_pending = []
+    for item in pending_items:
+        sources = item.get("sources", {})
+        # 检查是否有任何来源在未来计划中
+        has_future_source = any(plan_id in future_plan_ids for plan_id in sources.keys())
+        if has_future_source:
+            filtered_pending.append(item)
+        else:
+            # 将不再需要的项加入黑名单
+            ing_id = item.get("ingredient_id")
+            if ing_id:
+                removed_ingredient_ids.add(ing_id)
+    
+    # 如果过滤后为空，执行清空逻辑
+    if not filtered_pending and not custom_items:
+        logger.info(f"[获取采购任务] 过滤后待购项为空，清空采购任务")
+        
+        # 清空并标记完成
+        database.supabase.table("purchase_tasks").update({
+            "pending_items": [],
+            "custom_items": [],
+            "completed_items": [],  # 清空已采购项
+            "removed_ingredient_ids": [],  # 清空黑名单
+            "status": False,
+            "completed_at": datetime.now().isoformat()
+        }).eq("id", task_id).execute()
+        
+        print(f"[耗时] GET /shopping/task {time.time()-start:.2f}s", flush=True)
+        return {
+            "id": task_id,
+            "status": False,
+            "pending_items": [],
+            "custom_items": [],
+            "completed_items": [],  # 返回空
+            "removed_ingredient_ids": []  # 返回空
+        }
+    
+    # 更新任务中的 pending_items
+    database.supabase.table("purchase_tasks").update({
+        "pending_items": filtered_pending,
+        "removed_ingredient_ids": list(removed_ingredient_ids)
+    }).eq("id", task_id).execute()
+    
+    logger.info(f"[获取采购任务] 成功，待购项数量: {len(filtered_pending)}")
+    print(f"[耗时] GET /shopping/task {time.time()-start:.2f}s", flush=True)
+    
+    return {
+        "id": task_id,
+        "status": True,
+        "pending_items": filtered_pending,
+        "custom_items": custom_items,
+        "completed_items": completed_items,
+        "removed_ingredient_ids": list(removed_ingredient_ids)
+    }
+
+
+@router.post("/task/complete")
+@log_operation("完成采购")
+async def complete_purchase(request: models.CompletePurchaseRequest, current_user: User = Depends(get_current_user)):
+    """完成采购 - 原子性操作"""
+    start = time.time()
+    
+    task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    if not task or not task.data:
+        logger.warning("[完成采购] 没有找到活动任务")
+        return {
+            "id": "",
+            "status": False,  # false=已完成
+            "pending_items": [],
+            "custom_items": [],
+            "completed_items": [],
+            "removed_ingredient_ids": []
+        }
+    
+    task_id = task.data["id"]
+    checked_items = request.checked_items or []
+    
+    if not checked_items:
+        return {
+            "id": task_id,
+            "status": True,  # true=活跃
+            "pending_items": task.data.get("pending_items", []),
+            "custom_items": task.data.get("custom_items", []),
+            "completed_items": task.data.get("completed_items", []),
+            "removed_ingredient_ids": task.data.get("removed_ingredient_ids", [])
+        }
+    
+    try:
+        # 将 checked_items 转换为 RPC 需要的格式
+        checked_items_json = [
+            {
+                "ingredient_id": item.ingredient_id,
+                "ingredient_name": item.ingredient_name,
+                "need_quantity": item.need_quantity,
+                "is_custom": item.is_custom,
+                "custom_id": item.custom_id
+            }
+            for item in checked_items
+        ]
+        
+        # 调用原子性函数
+        result = database.supabase.rpc("complete_purchase_task", {
+            "p_task_id": task_id,
+            "p_checked_items": checked_items_json
+        }).execute()
+        
+        if not result.data or not result.data[0].get("success"):
+            raise HTTPException(status_code=500, detail="完成采购失败")
+        
+        # 获取更新后的任务
+        updated_task = database.supabase.table("purchase_tasks").select("*").eq("id", task_id).single().execute()
+        
+        logger.info(f"[完成采购] 成功，移除={result.data[0].get('removed_count')}, 添加={result.data[0].get('added_count')}")
+        print(f"[耗时] POST /shopping/task/complete {time.time()-start:.2f}s", flush=True)
+        
+        return {
+            "id": task_id,
+            "status": updated_task.data.get("status", True),
+            "pending_items": updated_task.data.get("pending_items", []),
+            "custom_items": updated_task.data.get("custom_items", []),
+            "completed_items": updated_task.data.get("completed_items", []),
+            "removed_ingredient_ids": updated_task.data.get("removed_ingredient_ids", [])
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[完成采购] 失败: 参数=task_id={task_id},checked_items={len(checked_items_json)}, 错误={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="完成采购失败")
+
+
+@router.post("/task/delete-item")
+@log_operation("删除采购项")
+async def delete_item(request: models.DeleteItemRequest, current_user: User = Depends(get_current_user)):
+    """删除单个采购项，加入黑名单"""
+    start = time.time()
+    
+    ingredient_id = request.ingredient_id
+    task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    
+    if not task or not task.data:
+        logger.warning("[删除采购项] 没有找到活动任务")
+        raise HTTPException(status_code=404, detail="没有找到活动任务")
+    
+    # 获取当前任务数据
+    pending_items = task.data.get("pending_items", [])
+    custom_items = task.data.get("custom_items", [])
+    completed_items = task.data.get("completed_items", [])
+    removed_ids = set(task.data.get("removed_ingredient_ids", []))
+    
+    # 添加到黑名单
+    removed_ids.add(ingredient_id)
+    
+    # 从待购项中移除
+    pending_items = [p for p in pending_items if p.get("ingredient_id") != ingredient_id]
+    
+    # 如果是临时物品，也从 custom_items 移除
+    if ingredient_id.startswith("custom-"):
+        custom_id = ingredient_id.replace("custom-", "")
+        custom_items = [c for c in custom_items if c.get("id") != custom_id]
+    
+    # 更新任务
+    removed_list = list(removed_ids)
+    result = database.supabase.table("purchase_tasks").update({
+        "pending_items": pending_items,
+        "custom_items": custom_items,
+        "removed_ingredient_ids": removed_list
+    }).eq("id", task.data["id"]).execute()
+    
+    if not result:
+        logger.error(f"[删除采购项] 更新purchase_tasks失败，task_id={task.data['id']}")
+        raise HTTPException(status_code=500, detail="更新采购任务失败")
+    
+    logger.info(f"[删除采购项] 成功，ingredient_id={ingredient_id}")
+    print(f"[耗时] POST /shopping/task/delete-item {time.time()-start:.2f}s", flush=True)
+    
+    return {
+        "id": task.data["id"],
+        "status": True,  # true=活跃
+        "pending_items": pending_items,
+        "custom_items": custom_items,
+        "completed_items": completed_items,
+        "removed_ingredient_ids": removed_list
+    }
+
+
+@router.post("/task/clear")
+@log_operation("清空采购任务")
+async def clear_task(current_user: User = Depends(get_current_user)):
+    """清空所有待购项，将它们加入黑名单，标记任务为已完成"""
+    start = time.time()
+    
+    task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    
+    if not task or not task.data:
+        logger.warning("[清空采购任务] 没有找到活动任务")
+        return {"message": "没有找到活动任务"}
+    
+    # 获取当前任务数据
+    pending_items = task.data.get("pending_items", [])
+    custom_items = task.data.get("custom_items", [])
+    removed_ids = set(task.data.get("removed_ingredient_ids", []))
+    
+    # 将所有待购项的 ingredient_id 加入黑名单
+    for item in pending_items:
+        ingredient_id = item.get("ingredient_id")
+        if ingredient_id:
+            removed_ids.add(ingredient_id)
+    
+    # 将所有自定义项也加入黑名单
+    for item in custom_items:
+        custom_id = item.get("id")
+        if custom_id:
+            removed_ids.add(f"custom-{custom_id}")
+    
+    # 更新任务
+    result = database.supabase.table("purchase_tasks").update({
+        "pending_items": [],
+        "custom_items": [],
+        "removed_ingredient_ids": list(removed_ids),
+        "status": False,  # false=已完成
+        "completed_at": datetime.now().isoformat()
+    }).eq("id", task.data["id"]).execute()
+    
+    if not result:
+        logger.error(f"[清空采购任务] 更新purchase_tasks失败，task_id={task.data['id']}")
+        raise HTTPException(status_code=500, detail="更新采购任务失败")
+    
+    logger.info(f"[清空采购任务] 成功")
+    print(f"[耗时] POST /shopping/task/clear {time.time()-start:.2f}s", flush=True)
+    
+    return {
+        "id": task.data["id"],
+        "status": False,  # false=已完成
+        "pending_items": [],
+        "custom_items": [],
+        "completed_items": task.data.get("completed_items", []),
+        "removed_ingredient_ids": list(removed_ids)
+    }
 
 
 @router.post("/task/refresh")
 @log_operation("刷新采购清单")
-async def refresh_purchase_task(request: models.RefreshRequest = None, current_user: User = Depends(get_current_user)):
+async def refresh_purchase_task(request: models.RefreshRequest, current_user: User = Depends(get_current_user)):
     """重新计算并保存采购任务"""
     import time
     start = time.time()
-    blacklist = request.locally_removed_ids if request else []
+    blacklist = request.locally_removed_ids or []
     
     t1 = time.time()
     ing_rows = database.supabase.table("ingredients").select("id, name, quantity").execute()
@@ -59,7 +391,7 @@ async def refresh_purchase_task(request: models.RefreshRequest = None, current_u
     logger.info(f"[shopping] 菜谱数量: {len(recipe_map)}")
     for rid, r in recipe_map.items():
         ings = r.get("ingredients") or []
-        logger.info(f"[shopping] 菜谱rid={rid}, 食材数={len(ings)}: {ings[:3]}")  # 只打印前3个
+        logger.info(f"[shopping] 菜谱rid={rid}, 食材数={len(ings)}: {ings[:3]}")
     print(f"[采购刷新-shopping] 查询菜谱 {len(recipe_map)} 条: {time.time()-t2:.2f}s", flush=True)
     
     from datetime import datetime
@@ -101,46 +433,34 @@ async def refresh_purchase_task(request: models.RefreshRequest = None, current_u
         pass
     
     if pending_items:
-        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("ingredient_name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
+        items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
         try:
             database.supabase.table("shopping_list").insert(items_to_insert).execute()
         except:
             pass
     
-    task = database.supabase.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-
-    if not task or not task.data:
-        if pending_items:
-            result = database.supabase.table("purchase_tasks").insert({
-                "status": "active",
-                "pending_items": pending_items,
-                "custom_items": [],
-                "removed_ingredient_ids": blacklist
-            }).execute()
-            if not result:
-                logger.error("[采购刷新] 创建purchase_tasks记录失败")
-                raise Exception("创建采购任务失败")
-            logger.info(f"[采购刷新] 已创建purchase_tasks记录")
-        return {"pending_items": pending_items}
-
-    # 如果待购项为空且存在活动任务，自动完成任务
-    if not pending_items:
-        result = database.supabase.table("purchase_tasks").update({
-            "status": "completed",
+    task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    
+    if not pending_items and task.data:
+        database.supabase.table("purchase_tasks").update({
+            "status": False,  # false=已完成
             "completed_at": datetime.now().isoformat(),
             "pending_items": [],
             "custom_items": []
         }).eq("id", task.data["id"]).execute()
-        if not result:
-            logger.error(f"[采购刷新] 更新purchase_tasks状态失败，task_id={task.data['id']}")
-            raise Exception("更新采购任务状态失败")
         logger.info(f"[采购刷新] 待购项为空，已自动完成任务")
-    else:
-        result = database.supabase.table("purchase_tasks").update({"pending_items": pending_items}).eq("id", task.data["id"]).execute()
-        if not result:
-            logger.error(f"[采购刷新] 更新pending_items失败，task_id={task.data['id']}")
-            raise Exception("更新待购项失败")
+    elif task.data:
+        database.supabase.table("purchase_tasks").update({"pending_items": pending_items}).eq("id", task.data["id"]).execute()
         logger.info(f"[采购刷新] 已更新purchase_tasks表的pending_items")
+    elif pending_items:
+        database.supabase.table("purchase_tasks").insert({
+            "status": True,  # true=活跃
+            "pending_items": pending_items,
+            "custom_items": [],
+            "completed_items": [],
+            "removed_ingredient_ids": blacklist
+        })
+        logger.info(f"[采购刷新] 已创建purchase_tasks记录")
     
     print(f"[采购刷新-shopping] 更新购物清单: {time.time()-t6:.2f}s", flush=True)
     
@@ -150,29 +470,24 @@ async def refresh_purchase_task(request: models.RefreshRequest = None, current_u
 
 @router.post("/task/add")
 @log_operation("添加食材到采购任务")
-async def add_to_task(ingredient_id: str, current_user: User = Depends(get_current_user)):
+async def add_to_task(request: models.AddToTaskRequest, current_user: User = Depends(get_current_user)):
     """添加食材到采购任务"""
     start = time.time()
-    task = database.supabase.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-
-    if not task or not task.data:
-        result = database.supabase.table("purchase_tasks").insert({
-            "status": "active",
+    task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    
+    if not task.data:
+        database.supabase.table("purchase_tasks").insert({
+            "status": True,  # true=活跃
             "pending_items": [],
             "custom_items": [],
+            "completed_items": [],
             "removed_ingredient_ids": []
         }).execute()
-        if not result:
-            logger.error("[添加食材] 创建purchase_tasks记录失败")
-            raise Exception("创建采购任务失败")
-        task = database.supabase.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-        if not task or not task.data:
-            logger.error("[添加食材] 创建purchase_tasks记录后查询失败")
-            raise Exception("查询采购任务失败")
-
+        task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    
     custom_items = task.data.get("custom_items", [])
-    ing = database.supabase.table("ingredients").select("*").eq("id", ingredient_id).single().execute()
-    if ing and ing.data:
+    ing = database.supabase.table("ingredients").select("*").eq("id", request.ingredient_id).single().execute()
+    if ing.data:
         custom_items.append({
             "id": f"custom-{len(custom_items)}",
             "name": ing.data["name"],
@@ -180,67 +495,7 @@ async def add_to_task(ingredient_id: str, current_user: User = Depends(get_curre
             "shop_name": None,
             "checked": False
         })
-        result = database.supabase.table("purchase_tasks").update({"custom_items": custom_items}).eq("id", task.data["id"]).execute()
-        if not result:
-            logger.error(f"[添加食材] 更新custom_items失败，task_id={task.data['id']}")
-            raise Exception("更新自定义项失败")
+        database.supabase.table("purchase_tasks").update({"custom_items": custom_items}).eq("id", task.data["id"]).execute()
     
     print(f"[耗时] POST /shopping/task/add {time.time()-start:.2f}s", flush=True)
     return {"message": "Added to task"}
-
-
-@router.post("/task/complete")
-@log_operation("完成采购")
-async def complete_purchase(request: models.CompletePurchaseRequest, current_user: User = Depends(get_current_user)):
-    """完成采购"""
-    start = time.time()
-    update_info = shopping_service.update_inventory_on_purchase(
-        database.supabase,
-        request.pending_items
-    )
-    
-    task = database.supabase.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-    if not task or not task.data:
-        logger.warning("[完成采购] 没有找到活动任务")
-    else:
-        purchased_ids = {item.ingredient_id for item in request.pending_items}
-        updated_pending = [p for p in task.data.get("pending_items", []) if p.get("ingredient_id") not in purchased_ids]
-
-        custom_ids = {item.id for item in request.custom_items if item.checked}
-        updated_custom = [c for c in task.data.get("custom_items", []) if c.get("id") not in custom_ids]
-
-        removed_ids = list(set(task.data.get("removed_ingredient_ids", []) + request.locally_removed_ids))
-
-        result = database.supabase.table("purchase_tasks").update({
-            "pending_items": updated_pending,
-            "custom_items": updated_custom,
-            "removed_ingredient_ids": removed_ids
-        }).eq("id", task.data["id"]).execute()
-        if not result:
-            logger.error(f"[完成采购] 更新purchase_tasks失败，task_id={task.data['id']}")
-            raise Exception("更新采购任务失败")
-    
-    print(f"[耗时] POST /shopping/task/complete {time.time()-start:.2f}s", flush=True)
-    return {"message": "Purchase completed"}
-
-
-@router.post("/task/clear")
-@log_operation("清空采购任务")
-async def clear_task(pending_items: List[dict], custom_items: List[dict], current_user: User = Depends(get_current_user)):
-    """清空采购任务"""
-    start = time.time()
-    task = database.supabase.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-    if not task or not task.data:
-        logger.warning("[清空任务] 没有找到活动任务")
-    else:
-        result = database.supabase.table("purchase_tasks").update({
-            "pending_items": [],
-            "custom_items": [],
-            "removed_ingredient_ids": []
-        }).eq("id", task.data["id"]).execute()
-        if not result:
-            logger.error(f"[清空任务] 更新purchase_tasks失败，task_id={task.data['id']}")
-            raise Exception("清空采购任务失败")
-    
-    print(f"[耗时] POST /shopping/task/clear {time.time()-start:.2f}s", flush=True)
-    return {"message": "Task cleared"}

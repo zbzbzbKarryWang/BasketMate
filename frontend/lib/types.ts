@@ -107,7 +107,7 @@ export interface RemovedItem {
 // 采购任务类型
 export interface PurchaseTask {
   id: string
-  status: 'active' | 'completed'
+  status: boolean  // true=活跃, false=已完成
   created_at: string
   completed_at: string | null
   pending_items: PendingItem[]

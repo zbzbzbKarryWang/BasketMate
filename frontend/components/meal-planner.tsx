@@ -326,7 +326,7 @@ export function MealPlanner({ targetDate, editingPlan, onBack }: MealPlannerProp
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-4 pb-12">
+      <main className="flex-1 overflow-y-auto px-6 py-4 pb-16">
         <div className="flex flex-col gap-4">
           {/* 日期选择卡片 */}
           <Card className="shadow-sm gap-0">
