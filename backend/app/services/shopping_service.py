@@ -13,7 +13,7 @@ def parse_recipe_ingredients(ingredients: List[dict]) -> List[dict]:
             if "ingredient_id" in ing:
                 result.append(ing)
             elif "name" in ing:
-                result.append({"name": ing["name"], "quantity": ing.get("quantity", 0), "unit": ""})
+                result.append({"name": ing["name"], "quantity": ing.get("quantity", 0)})
     return result
 
 
@@ -109,7 +109,6 @@ def compute_pending_items(
             "ingredient_id": ing_id,
             "ingredient_name": ing.get("name", "未知"),
             "need_quantity": need_purchase,
-            "unit": "",
             "shop_name": best_shop,
             "price": best_price or 0,
             "checked": False
@@ -230,7 +229,6 @@ def update_pending_items_with_sources(
         "ingredient_id": "xxx",
         "ingredient_name": "xxx",
         "need_quantity": 2.0,
-        "unit": "",
         "shop_name": "xxx",
         "price": 10.0,
         "checked": false,
@@ -307,7 +305,6 @@ def update_pending_items_with_sources(
                     "ingredient_id": ing_id,
                     "ingredient_name": inventory_ing.get("name", "未知"),
                     "need_quantity": need_qty - stock,
-                    "unit": "",
                     "shop_name": best_shop,
                     "price": best_price or 0,
                     "checked": False,

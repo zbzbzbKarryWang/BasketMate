@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from 'react'
-import { CalendarDays, ShoppingCart, Utensils, Package, FileText, FolderOpen, FileUp } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { CalendarDays, ShoppingCart, Utensils, Package, FileText, FolderOpen, FileUp, Trash2, Edit3, Eye } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAppStore } from '@/lib/store'
 import { useData } from '@/contexts/DataContext'
@@ -20,16 +20,179 @@ import {
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { apiGet, apiPost } from '@/lib/api-client'
+import { toast } from '@/lib/toast'
+import { ImageEditor } from '@/components/image-editor'
+
+interface ProcessedImage {
+  id: string
+  originalFile: File
+  editedBlob: Blob | null
+  previewUrl: string
+}
 
 export function HomePage() {
-  const { mealPlans, inventory, recipes, activePurchaseTask, error, connectionStatus } = useData()
+  const { mealPlans, inventory, recipes, activePurchaseTask, error, connectionStatus, shops } = useData()
   const { setActiveTab, setShowNewPlan } = useAppStore()
   const router = useRouter()
 
   const [showImportModal, setShowImportModal] = useState(false)
   const [importInventory, setImportInventory] = useState(true)
   const [importPrice, setImportPrice] = useState(true)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [selectedShopId, setSelectedShopId] = useState<string>('')
+  const [processedImages, setProcessedImages] = useState<ProcessedImage[]>([])
+  const [importSubmitting, setImportSubmitting] = useState(false)
+  const [unviewedImportCount, setUnviewedImportCount] = useState(0)
+  const [showUploadSuccess, setShowUploadSuccess] = useState(false)
+  
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [currentImage, setCurrentImage] = useState<ProcessedImage | null>(null)
+
+  const fetchUnviewedCount = async () => {
+    try {
+      const res = await apiGet<{ id: string; viewed: boolean }[]>('/import/records')
+      if (Array.isArray(res)) {
+        setUnviewedImportCount(res.filter((r) => !r.viewed).length)
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  useEffect(() => {
+    fetchUnviewedCount()
+    const interval = setInterval(fetchUnviewedCount, 15000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const blobToBase64 = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files)
+      const newImages: ProcessedImage[] = files.map(file => ({
+        id: Date.now() + Math.random().toString(36).substr(2, 9),
+        originalFile: file,
+        editedBlob: null,
+        previewUrl: URL.createObjectURL(file)
+      }))
+      setProcessedImages([...processedImages, ...newImages])
+      
+      if (newImages.length > 0) {
+        setCurrentImage(newImages[0])
+        setEditorOpen(true)
+      }
+      
+      e.target.value = ''
+    }
+  }
+
+  const openEditor = (image: ProcessedImage) => {
+    setCurrentImage(image)
+    setEditorOpen(true)
+  }
+
+  const handleEditorConfirm = (croppedBlob: Blob) => {
+    if (!currentImage) return
+    
+    const newPreviewUrl = URL.createObjectURL(croppedBlob)
+    
+    setProcessedImages(processedImages.map(img => {
+      if (img.id === currentImage.id) {
+        return {
+          ...img,
+          editedBlob: croppedBlob,
+          previewUrl: newPreviewUrl
+        }
+      }
+      return img
+    }))
+    
+    if (currentImage.previewUrl) {
+      URL.revokeObjectURL(currentImage.previewUrl)
+    }
+    setCurrentImage(null)
+    setEditorOpen(false)
+    toast.success('图片编辑成功')
+  }
+
+  const handleEditorCancel = () => {
+    if (currentImage?.previewUrl) {
+      URL.revokeObjectURL(currentImage.previewUrl)
+    }
+    setCurrentImage(null)
+    setEditorOpen(false)
+  }
+
+  const removeImage = (imageId: string) => {
+    const image = processedImages.find(img => img.id === imageId)
+    if (image?.previewUrl) {
+      URL.revokeObjectURL(image.previewUrl)
+    }
+    setProcessedImages(processedImages.filter((img) => img.id !== imageId))
+  }
+
+  const handleConfirmImport = async () => {
+    if (processedImages.length === 0) {
+      toast.warning('请至少选择一张图片')
+      return
+    }
+    if (!importInventory && !importPrice) {
+      toast.warning('请至少选择一种导入类型')
+      return
+    }
+    if (importPrice && !selectedShopId) {
+      toast.warning('导入比价时请选择店铺')
+      return
+    }
+
+    const importType: string[] = []
+    if (importInventory) importType.push('inventory')
+    if (importPrice) importType.push('price')
+
+    const shopName = importPrice
+      ? shops.find((s) => s.id === selectedShopId)?.name || ''
+      : undefined
+
+    setImportSubmitting(true)
+    try {
+      const images = await Promise.all(processedImages.map(async (img) => {
+        const blob = img.editedBlob || img.originalFile
+        return blobToBase64(blob)
+      }))
+      
+      await apiPost('/import/upload', {
+        images,
+        import_type: importType,
+        shop_name: shopName,
+      })
+      
+      setShowImportModal(false)
+      processedImages.forEach((img) => {
+        if (img.previewUrl) URL.revokeObjectURL(img.previewUrl)
+      })
+      setProcessedImages([])
+      setSelectedShopId('')
+      fetchUnviewedCount()
+      setShowUploadSuccess(true)
+    } catch (e: any) {
+      toast.error(`上传失败: ${e?.message || '未知错误'}`)
+    } finally {
+      setImportSubmitting(false)
+    }
+  }
+
+  const handleOpenImportModal = () => {
+    setShowImportModal(true)
+    setProcessedImages([])
+    setSelectedShopId('')
+  }
 
   const formatIngredientName = (name: string) => {
     const item = inventory.find(i => {
@@ -53,15 +216,12 @@ export function HomePage() {
   const dayAfterTomorrow = getDayAfterTomorrowString()
   const todayPlan = mealPlans.find(p => p.date === today)
   
-  // 早餐食谱
   const breakfastRecipes = useMemo(() => {
     return recipes.filter(r => r.category === 'breakfast')
   }, [recipes])
   
-  // 计算是否有需购买项
   const hasShoppingItems = (activePurchaseTask?.pending_items?.length ?? 0) > 0 || (activePurchaseTask?.custom_items?.length ?? 0) > 0
   
-  // 计算下一个无计划日期
   const getNextAvailableDate = () => {
     const planDates = new Set(mealPlans.map(p => p.date))
     
@@ -71,7 +231,6 @@ export function HomePage() {
     return null
   }
   
-  // 处理“吃什么”按钮点击
   const handleWhatsForDinner = () => {
     const nextDate = getNextAvailableDate()
     if (nextDate) {
@@ -120,7 +279,6 @@ export function HomePage() {
           <CardContent>
             {todayPlan ? (
               <div className="space-y-4">
-                {/* 早餐 */}
                 {todayPlan.breakfast_recipe_id && (
                   <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                     <span className="text-2xl">{getBreakfastEmojiById(todayPlan.breakfast_recipe_id, breakfastRecipes)}</span>
@@ -131,7 +289,6 @@ export function HomePage() {
                   </div>
                 )}
                 
-                {/* 正餐菜谱 */}
                 {todayPlan.recipes.length > 0 && (
                   <div className="space-y-2">
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -187,7 +344,6 @@ export function HomePage() {
           </CardContent>
         </Card>
 
-        {/* 快捷操作卡片 */}
         <div className="grid grid-cols-2 gap-3 mt-4">
           <Card 
             className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -224,11 +380,10 @@ export function HomePage() {
           </Card>
         </div>
 
-        {/* 导入操作卡片 */}
         <div className="grid grid-cols-3 gap-3 mt-4">
-          <Card 
+          <Card
             className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setShowImportModal(true)}
+            onClick={handleOpenImportModal}
           >
             <CardContent className="flex items-center justify-center gap-2 p-3">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -237,8 +392,8 @@ export function HomePage() {
               <span className="text-sm font-medium">导入小票</span>
             </CardContent>
           </Card>
-          <Card 
-            className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+          <Card
+            className="shadow-sm cursor-pointer hover:shadow-md transition-shadow relative"
             onClick={() => router.push('/imports')}
           >
             <CardContent className="flex items-center justify-center gap-2 p-3">
@@ -247,6 +402,9 @@ export function HomePage() {
               </div>
               <span className="text-sm font-medium">查看导入</span>
             </CardContent>
+            {unviewedImportCount > 0 && (
+              <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500" />
+            )}
           </Card>
           <Card 
             className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -261,7 +419,6 @@ export function HomePage() {
           </Card>
         </div>
 
-        {/* 吃什么卡片 */}
         <Card 
           className="shadow-sm cursor-pointer hover:shadow-md transition-shadow mt-4"
           onClick={handleWhatsForDinner}
@@ -293,67 +450,145 @@ export function HomePage() {
         showCancelButton={false}
       />
 
+      <ConfirmModal
+        isOpen={showUploadSuccess}
+        title="上传成功"
+        message="正在识别，请稍后查看导入记录"
+        onConfirm={() => setShowUploadSuccess(false)}
+        onCancel={() => setShowUploadSuccess(false)}
+        showCancelButton={false}
+      />
+
       <Dialog open={showImportModal} onOpenChange={setShowImportModal}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>导入小票</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="importInventory" 
+              <Checkbox
+                id="importInventory"
                 checked={importInventory}
                 onCheckedChange={(checked) => setImportInventory(checked as boolean)}
               />
               <Label htmlFor="importInventory">导入库存</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="importPrice" 
+              <Checkbox
+                id="importPrice"
                 checked={importPrice}
                 onCheckedChange={(checked) => setImportPrice(checked as boolean)}
               />
               <Label htmlFor="importPrice">导入比价</Label>
             </div>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            {importPrice && (
+              <div className="grid gap-2">
+                <Label htmlFor="shop-select">选择店铺</Label>
+                <select
+                  id="shop-select"
+                  value={selectedShopId}
+                  onChange={(e) => setSelectedShopId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">请选择店铺</option>
+                  {shops.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 className="hidden"
                 id="file-upload"
-                onChange={(e) => {
-                  if (e.target.files) {
-                    setSelectedFiles(Array.from(e.target.files))
-                  }
-                }}
+                onChange={handleFileSelect}
               />
               <label htmlFor="file-upload" className="cursor-pointer">
                 <FileUp className="mx-auto h-8 w-8 text-gray-400 mb-2" />
                 <p className="text-sm text-gray-500">
                   点击选择图片或拖拽到此处
                 </p>
-                {selectedFiles.length > 0 && (
-                  <p className="text-sm text-primary mt-2">
-                    已选择 {selectedFiles.length} 张图片
-                  </p>
-                )}
               </label>
             </div>
+
+            {processedImages.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">
+                  已选择 {processedImages.length} 张图片
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {processedImages.map((img) => (
+                    <div key={img.id} className="relative group">
+                      <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border">
+                        <img
+                          src={img.previewUrl}
+                          alt="preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openEditor(img)}
+                        >
+                          <Edit3 className="w-3 h-3 mr-1" />
+                          编辑
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeImage(img.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      {img.editedBlob && (
+                        <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded">
+                          已编辑
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={() => setShowImportModal(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowImportModal(false)}
+              disabled={importSubmitting}
+            >
               取消
             </Button>
-            <Button onClick={() => {
-              console.log('确认导入', { importInventory, importPrice, selectedFiles })
-              setShowImportModal(false)
-            }}>
-              确认
+            <Button
+              onClick={handleConfirmImport}
+              disabled={importSubmitting}
+            >
+              {importSubmitting ? '上传中...' : '确认'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {editorOpen && currentImage && (
+        <ImageEditor
+          isOpen={editorOpen}
+          onClose={handleEditorCancel}
+          imageFile={currentImage.editedBlob 
+            ? new File([currentImage.editedBlob], 'edited.jpg', { type: 'image/jpeg' })
+            : currentImage.originalFile
+          }
+          onConfirm={handleEditorConfirm}
+        />
+      )}
     </div>
   )
 }

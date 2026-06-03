@@ -138,15 +138,18 @@ export function ShoppingPage() {
     try {
       const response = await fetch('/api/shopping/task')
       if (response.ok) {
-        const data = await response.json()
-        setPendingItems(data.pending_items || [])
-        setCustomItems(data.custom_items || [])
-        setCompletedItems(data.completed_items || [])
-        setRemovedIngredientIds(data.removed_ingredient_ids || [])
-        
-        const allItems = [...(data.pending_items || []), ...(data.custom_items || [])]
-        const stores = new Set(allItems.map(item => item.shop_name || "待定"))
-        setExpandedStores(stores)
+        const apiResponse = await response.json()
+        if (apiResponse.success) {
+          const data = apiResponse.data || {}
+          setPendingItems(data.pending_items || [])
+          setCustomItems(data.custom_items || [])
+          setCompletedItems(data.completed_items || [])
+          setRemovedIngredientIds(data.removed_ingredient_ids || [])
+          
+          const allItems = [...(data.pending_items || []), ...(data.custom_items || [])]
+          const stores = new Set(allItems.map(item => item.shop_name || "待定"))
+          setExpandedStores(stores)
+        }
       }
     } catch (error) {
       console.error('Failed to fetch purchase task:', error)
@@ -216,11 +219,14 @@ export function ShoppingPage() {
         body: JSON.stringify({ ingredient_id: ingredientId })
       })
       if (response.ok) {
-        const data = await response.json()
-        setPendingItems(data.pending_items || [])
-        setCustomItems(data.custom_items || [])
-        setCompletedItems(data.completed_items || [])
-        setRemovedIngredientIds(data.removed_ingredient_ids || [])
+        const apiResponse = await response.json()
+        if (apiResponse.success) {
+          const data = apiResponse.data || {}
+          setPendingItems(data.pending_items || [])
+          setCustomItems(data.custom_items || [])
+          setCompletedItems(data.completed_items || [])
+          setRemovedIngredientIds(data.removed_ingredient_ids || [])
+        }
       }
     } catch (error) {
       console.error('Failed to delete item:', error)
@@ -253,13 +259,18 @@ export function ShoppingPage() {
       })
       
       if (response.ok) {
-        const data = await response.json()
-        setPendingItems(data.pending_items || [])
-        setCustomItems(data.custom_items || [])
-        setCompletedItems(data.completed_items || [])
-        setRemovedIngredientIds(data.removed_ingredient_ids || [])
-        setHasUnsavedChanges(false)
-        setShowCompleteSuccess(true)
+        const apiResponse = await response.json()
+        if (apiResponse.success) {
+          const data = apiResponse.data || {}
+          setPendingItems(data.pending_items || [])
+          setCustomItems(data.custom_items || [])
+          setCompletedItems(data.completed_items || [])
+          setRemovedIngredientIds(data.removed_ingredient_ids || [])
+          setHasUnsavedChanges(false)
+          setShowCompleteSuccess(true)
+        } else {
+          setShowCompleteError(true)
+        }
       } else {
         setShowCompleteError(true)
       }
@@ -280,12 +291,17 @@ export function ShoppingPage() {
       })
       
       if (response.ok) {
-        const data = await response.json()
-        setPendingItems(data.pending_items || [])
-        setCustomItems(data.custom_items || [])
-        setCompletedItems(data.completed_items || [])
-        setRemovedIngredientIds(data.removed_ingredient_ids || [])
-        setShowClearSuccess(true)
+        const apiResponse = await response.json()
+        if (apiResponse.success) {
+          const data = apiResponse.data || {}
+          setPendingItems(data.pending_items || [])
+          setCustomItems(data.custom_items || [])
+          setCompletedItems(data.completed_items || [])
+          setRemovedIngredientIds(data.removed_ingredient_ids || [])
+          setShowClearSuccess(true)
+        } else {
+          setShowClearError(true)
+        }
       } else {
         setShowClearError(true)
       }

@@ -3,10 +3,10 @@
 create extension if not exists "pgcrypto";
 
 -- 食材 / 库存
+-- IMPORTANT: unit 字段已永久废弃，以后任何代码都不应该再使用！
 create table if not exists public.ingredients (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
-  unit text not null default '份',
   quantity double precision not null default 0,
   added_at timestamptz not null default now()
 );
@@ -55,9 +55,22 @@ create table if not exists public.shopping_list (
   is_ephemeral boolean not null default false
 );
 
+-- 导入记录
+create table if not exists public.import_records (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  shop_name text,
+  import_type jsonb not null default '[]'::jsonb,
+  status text not null default 'pending',
+  items jsonb not null default '[]'::jsonb,
+  image_count integer not null default 0,
+  viewed boolean not null default false
+);
+
 create index if not exists idx_plans_date on public.plans (date);
 create index if not exists idx_prices_ingredient on public.prices (ingredient_id);
 create index if not exists idx_shopping_ingredient on public.shopping_list (ingredient_id);
+create index if not exists idx_import_records_created_at on public.import_records (created_at desc);
 
 -- 开发用：允许匿名读写（生产请改为认证用户 + 细粒度策略）
 alter table public.ingredients enable row level security;
@@ -66,6 +79,7 @@ alter table public.prices enable row level security;
 alter table public.recipes enable row level security;
 alter table public.plans enable row level security;
 alter table public.shopping_list enable row level security;
+alter table public.import_records enable row level security;
 
 create policy "ingredients_all" on public.ingredients for all using (true) with check (true);
 create policy "shops_all" on public.shops for all using (true) with check (true);
@@ -73,3 +87,4 @@ create policy "prices_all" on public.prices for all using (true) with check (tru
 create policy "recipes_all" on public.recipes for all using (true) with check (true);
 create policy "plans_all" on public.plans for all using (true) with check (true);
 create policy "shopping_list_all" on public.shopping_list for all using (true) with check (true);
+create policy "import_records_all" on public.import_records for all using (true) with check (true);

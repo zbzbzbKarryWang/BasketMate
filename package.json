@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-easy-crop": "^5.5.7",
+    "react-image-crop": "^11.0.10"
+  }
+}

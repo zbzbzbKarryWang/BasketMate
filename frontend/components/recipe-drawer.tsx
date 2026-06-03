@@ -137,7 +137,7 @@ export function RecipeDrawer({
                           : 'text-red-600'
                       )}>
                         {formatIngredientName(i.name)} {Math.max(1, Math.floor(i.quantity))}
-                        {index < recipe.ingredients.length - 1 && '、'}
+                        {index < recipe.ingredients.length - 1 ? '、' : null}
                       </span>
                     ))}
                   </div>
