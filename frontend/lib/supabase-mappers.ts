@@ -4,7 +4,6 @@ export type IngredientRow = {
   id: string
   name: string
   alias: string | null
-  unit: string
   quantity: number
   added_at: string
 }
@@ -70,7 +69,6 @@ export function rowToInventoryItem(row: IngredientRow): InventoryItem {
     name: row.name,
     alias: row.alias ?? undefined,
     quantity: row.quantity,
-    unit: row.unit,
     addedAt: new Date(row.added_at),
   }
 }
@@ -91,8 +89,7 @@ export function rowToPriceItem(
 
 export function rowToRecipe(
   row: RecipeRow,
-  nameByIngredientId: Map<string, string>,
-  unitByIngredientId: Map<string, string>
+  nameByIngredientId: Map<string, string>
 ): Recipe {
   const refs = parseRecipeIngredients(row.ingredients)
   return {
@@ -103,7 +100,6 @@ export function rowToRecipe(
       .map((r) => ({
         name: r.name ?? nameByIngredientId.get(r.ingredient_id) ?? '未知',
         quantity: r.quantity,
-        unit: unitByIngredientId.get(r.ingredient_id) ?? '',
       })),
     notes: row.notes ?? undefined,
   }
@@ -163,7 +159,6 @@ export function rowToShoppingItem(
     id: row.id,
     name,
     quantity: row.need_quantity,
-    unit: '',
     price: 0,
     store: row.shop_name,
     checked: row.checked,

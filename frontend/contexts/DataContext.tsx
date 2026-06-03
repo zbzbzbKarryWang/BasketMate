@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react"
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api-client"
+import logger from "@/lib/logger"
 
 import type {
   BreakfastOption,
@@ -54,7 +55,6 @@ type DataContextValue = {
   deleteIngredient: (id: string) => Promise<void>
   addIngredient: (data: {
     name: string
-    unit?: string
     quantity?: number
     alias?: string
   }) => Promise<string>
@@ -90,12 +90,10 @@ const DataContext = createContext<DataContextValue | null>(null)
 
 function buildIngredientMaps(rows: IngredientRow[]) {
   const nameById = new Map<string, string>()
-  const unitById = new Map<string, string>()
   for (const r of rows) {
     nameById.set(r.id, r.name)
-    unitById.set(r.id, r.unit)
   }
-  return { nameById, unitById }
+  return { nameById }
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
@@ -133,12 +131,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       const ingRows = await apiGet<IngredientRow[]>('/ingredients')
       const ingredients = ingRows || []
-      const { nameById, unitById } = buildIngredientMaps(ingredients)
+      const { nameById } = buildIngredientMaps(ingredients)
       setInventory(ingredients.map(rowToInventoryItem))
 
       const recipeRows = await apiGet<RecipeRow[]>('/recipes')
       const rrows = recipeRows || []
-      const recipeUi = rrows.map((r) => rowToRecipe(r, nameById, unitById))
+      const recipeUi = rrows.map((r) => rowToRecipe(r, nameById))
       setRecipes(recipeUi)
       const recipesById = new Map(recipeUi.map((r) => [r.id, r]))
 
@@ -198,14 +196,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [refresh])
 
   const updateIngredient = useCallback(async (id: string, quantity: number, additionalData?: Partial<{ name: string; addedAt: Date; alias?: string }>) => {
-    const updateData: Record<string, any> = { quantity }
-    if (additionalData) {
-      if (additionalData.name) updateData.name = additionalData.name
-      if (additionalData.addedAt) updateData.added_at = additionalData.addedAt.toISOString()
-      if (additionalData.alias !== undefined) updateData.alias = additionalData.alias || null
+    try {
+      const updateData: Record<string, any> = { quantity }
+      if (additionalData) {
+        if (additionalData.name) updateData.name = additionalData.name
+        if (additionalData.addedAt) updateData.added_at = additionalData.addedAt.toISOString()
+        if (additionalData.alias !== undefined) updateData.alias = additionalData.alias || null
+      }
+      await apiPut(`/ingredients/${id}`, updateData)
+      logger.log('log', `更新食材成功: id=${id}, quantity=${quantity}`, 'DataContext', 'updateIngredient')
+      await refresh()
+    } catch (e) {
+      logger.log('error', `更新食材失败: id=${id}, error=${e}`, 'DataContext', 'updateIngredient')
+      throw e
     }
-    await apiPut(`/ingredients/${id}`, updateData)
-    await refresh()
   }, [refresh])
 
   const deleteIngredient = useCallback(async (id: string) => {
@@ -223,23 +227,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       try {
         await apiDelete(`/ingredients/${id}`)
+        logger.log('log', `删除食材成功: id=${id}`, 'DataContext', 'deleteIngredient')
       } catch (e) {
         // might fail if already handled by cascade
+        logger.log('warn', `删除食材部分失败: id=${id}, error=${e}`, 'DataContext', 'deleteIngredient')
       }
     } catch (e) {
-      // ignore
+      logger.log('error', `删除食材失败: id=${id}, error=${e}`, 'DataContext', 'deleteIngredient')
     }
     await refresh()
   }, [refresh])
 
   const addIngredient = useCallback(
-    async (data: { name: string; unit?: string; quantity?: number; alias?: string }) => {
+    async (data: { name: string; quantity?: number; alias?: string }) => {
       const name = data.name.trim()
       try {
         const existing = await apiGet<{ id: string; quantity: number } | null>(`/ingredients?name=${encodeURIComponent(name)}`)
         if (existing && 'id' in existing) {
           const newQuantity = (existing.quantity || 0) + (data.quantity ?? 0)
           await apiPut(`/ingredients/${existing.id}`, { quantity: newQuantity })
+          logger.log('log', `添加食材（累加）成功: name=${name}, id=${existing.id}, quantity=${data.quantity}`, 'DataContext', 'addIngredient')
           await refresh()
           return existing.id
         }
@@ -248,10 +255,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
       const ins = await apiPost<{ id: string }>('/ingredients', {
         name,
-        unit: data.unit ?? "份",
         quantity: data.quantity ?? 0,
         alias: data.alias ?? null,
       })
+      logger.log('log', `添加食材成功: name=${name}, id=${ins.id}`, 'DataContext', 'addIngredient')
       await refresh()
       return ins.id
     },
@@ -386,12 +393,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addPlan = useCallback(
     async (plan: Omit<MealPlan, "id" | "shoppingListItems">) => {
-      await apiPost('/plans', {
-        date: plan.date,
-        breakfast_recipe_id: plan.breakfast_recipe_id,
-        meal_ids: plan.recipes.map((r) => r.id),
-      })
-      await refresh()
+      try {
+        await apiPost('/plans', {
+          date: plan.date,
+          breakfast_recipe_id: plan.breakfast_recipe_id,
+          meal_ids: plan.recipes.map((r) => r.id),
+        })
+        await refresh()
+      } catch (e) {
+        throw e
+      }
     },
     [refresh]
   )
@@ -470,7 +481,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         shop_name: bestPrice?.shop_name || "待定",
         price: bestPrice?.price || 0,
         need_quantity: 1,
-        unit: ingredient.unit,
         checked: false
       })
       
@@ -488,46 +498,50 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     customItems: any[],
     locallyRemovedIds: string[]
   ) => {
-    const checkedItems = pendingItems.filter(item => item.checked)
-    
-    for (const item of checkedItems) {
-      if (item.ingredient_id) {
-        try {
-          const current = await apiGet<{ quantity: number }>(`/ingredients/${item.ingredient_id}`)
-          const currentQty = current?.quantity || 0
-          const currentDate = new Date().toISOString()
-          
-          await apiPut(`/ingredients/${item.ingredient_id}`, {
-            quantity: currentQty + item.need_quantity,
-            added_at: currentQty === 0 ? currentDate : undefined
-          })
-        } catch (e) {
-          // ignore
+    try {
+      const checkedItems = pendingItems.filter(item => item.checked)
+
+      for (const item of checkedItems) {
+        if (item.ingredient_id) {
+          try {
+            const current = await apiGet<{ quantity: number }>(`/ingredients/${item.ingredient_id}`)
+            const currentQty = current?.quantity || 0
+            const currentDate = new Date().toISOString()
+
+            await apiPut(`/ingredients/${item.ingredient_id}`, {
+              quantity: currentQty + item.need_quantity,
+              added_at: currentQty === 0 ? currentDate : undefined
+            })
+          } catch (e) {
+            // ignore
+          }
         }
       }
-    }
-    
-    const task = activePurchaseTask
-    if (task) {
-      const mergedRemovedIds = Array.from(
-        new Set([...(task.removed_ingredient_ids || []), ...locallyRemovedIds])
-      )
-      
-      const remainingPending = pendingItems.filter(item => !item.checked)
-      const remainingCustom = customItems.filter(item => !item.checked)
-      
-      if (remainingPending.length === 0 && remainingCustom.length === 0) {
-        await apiPost('/shopping/task/complete', {
-          pending_items: [],
-          custom_items: [],
-          locally_removed_ids: mergedRemovedIds
-        })
-      } else {
-        await upsertActiveTask(remainingPending, remainingCustom, mergedRemovedIds)
+
+      const task = activePurchaseTask
+      if (task) {
+        const mergedRemovedIds = Array.from(
+          new Set([...(task.removed_ingredient_ids || []), ...locallyRemovedIds])
+        )
+
+        const remainingPending = pendingItems.filter(item => !item.checked)
+        const remainingCustom = customItems.filter(item => !item.checked)
+
+        if (remainingPending.length === 0 && remainingCustom.length === 0) {
+          await apiPost('/shopping/task/complete', {
+            pending_items: [],
+            custom_items: [],
+            locally_removed_ids: mergedRemovedIds
+          })
+        } else {
+          await upsertActiveTask(remainingPending, remainingCustom, mergedRemovedIds)
+        }
       }
+
+      await refresh()
+    } catch (e) {
+      throw e
     }
-    
-    await refresh()
   }, [activePurchaseTask, refresh])
 
   const clearPurchaseTask = useCallback(async (pendingItems: PendingItem[], customItems: any[]) => {

@@ -8,7 +8,8 @@ LOG_FILE = os.path.join(LOG_DIR, "app.log")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 logger = logging.getLogger("basketmate")
-logger.setLevel(logging.INFO)
+# 设置为 DEBUG 以确保 OCR 详细日志都能写入 app.log
+logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s.%(levelname)s %(name)s %(message)s", "%Y-%m-%d %H:%M:%S.%f")
 

@@ -64,82 +64,88 @@ def refresh_purchase_task():
     t6 = time.time()
     try:
         database.supabase.table("shopping_list").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"[采购刷新-plans] 清空旧购物清单失败: {str(e)}")
     
     if pending_items:
         items_to_insert = [{"ingredient_id": p.get("ingredient_id"), "need_quantity": p.get("need_quantity", 1), "ingredient_name": p.get("name", ""), "shop_name": p.get("shop_name", "待定")} for p in pending_items]
         try:
             database.supabase.table("shopping_list").insert(items_to_insert).execute()
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"[采购刷新-plans] 插入新购物清单失败: {str(e)}")
     print(f"[采购刷新-plans] 更新购物清单: {time.time()-t6:.2f}s", flush=True)
     
     print(f"[采购刷新-plans] 总耗时: {time.time()-start:.2f}s", flush=True)
 
 
-@router.get("", response_model=List[models.PlanResponse])
+@router.get("", response_model=models.ApiResponse[List[models.PlanResponse]])
 @log_operation("获取计划列表")
 async def get_plans(current_user: User = Depends(get_current_user)):
     """获取所有计划"""
     start = time.time()
     response = database.supabase.table("plans").select("*").order("date").execute()
     print(f"[耗时] GET /plans {time.time()-start:.2f}s", flush=True)
-    return response.data
+    return models.ApiResponse.ok(response.data)
 
 
-@router.get("/{plan_id}", response_model=models.PlanResponse)
+@router.get("/{plan_id}", response_model=models.ApiResponse[models.PlanResponse])
 @log_operation("获取计划详情")
 async def get_plan(plan_id: str, current_user: User = Depends(get_current_user)):
     """获取单个计划"""
     start = time.time()
     response = database.supabase.table("plans").select("*").eq("id", plan_id).single().execute()
     if not response.data:
-        raise HTTPException(status_code=404, detail="Plan not found")
+        return models.ApiResponse.fail("计划不存在")
     print(f"[耗时] GET /plans/{plan_id} {time.time()-start:.2f}s", flush=True)
-    return response.data
+    return models.ApiResponse.ok(response.data)
 
 
-@router.post("", response_model=models.PlanResponse)
+@router.post("", response_model=models.ApiResponse[models.PlanResponse])
 @log_operation("创建计划")
 async def create_plan(plan: models.PlanCreate, current_user: User = Depends(get_current_user)):
     """创建新计划（原子性操作）"""
     start = time.time()
     
     try:
-        # 调用原子性函数
+        # 调用原子性函数（有返回值）
         result = database.supabase.rpc("create_plan_with_refresh", {
             "p_date": plan.date,
             "p_breakfast_recipe_id": plan.breakfast_recipe_id,
             "p_meal_ids": plan.meal_ids or []
         }).execute()
         
-        if not result.data or not result.data[0].get("success"):
-            raise HTTPException(status_code=500, detail="创建计划失败")
+        # 检查返回值是否有效
+        if not result or result.data is None or not isinstance(result.data, list) or len(result.data) == 0:
+            logger.error(f"[创建计划] RPC调用返回空数据: date={plan.date}, breakfast={plan.breakfast_recipe_id}, meals={plan.meal_ids}")
+            return models.ApiResponse.fail("创建计划失败")
+        
+        if not result.data[0].get("success"):
+            return models.ApiResponse.fail("创建计划失败")
         
         plan_id = result.data[0].get("plan_id")
         
         # 获取创建的计划详情
         response = database.supabase.table("plans").select("*").eq("id", plan_id).single().execute()
+        if not response.data:
+            return models.ApiResponse.fail("创建计划失败")
+        
         print(f"[耗时] POST /plans 创建计划: {time.time()-start:.2f}s", flush=True)
         logger.info(f"[创建计划] 成功，plan_id={plan_id}")
-        return response.data
+        return models.ApiResponse.ok(response.data)
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"[创建计划] 失败: 参数=date={plan.date},breakfast={plan.breakfast_recipe_id},meals={plan.meal_ids}, 错误={str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="创建计划失败")
+        return models.ApiResponse.fail("创建计划失败")
 
 
-@router.put("/{plan_id}", response_model=models.PlanResponse)
+@router.put("/{plan_id}", response_model=models.ApiResponse[models.PlanResponse])
 @log_operation("更新计划")
 async def update_plan(plan_id: str, plan: models.PlanUpdate, current_user: User = Depends(get_current_user)):
     """更新计划（原子性操作）"""
     start = time.time()
     
     try:
-        # 调用原子性函数
+        # 调用原子性函数（有返回值）
         result = database.supabase.rpc("update_plan_with_refresh", {
             "p_plan_id": plan_id,
             "p_date": plan.date,
@@ -147,46 +153,58 @@ async def update_plan(plan_id: str, plan: models.PlanUpdate, current_user: User 
             "p_meal_ids": plan.meal_ids
         }).execute()
         
-        if not result.data or not result.data[0].get("success"):
-            raise HTTPException(status_code=500, detail="更新计划失败")
+        # 检查返回值是否有效
+        if not result or result.data is None or not isinstance(result.data, list) or len(result.data) == 0:
+            logger.error(f"[更新计划] RPC调用返回空数据: plan_id={plan_id}, date={plan.date}, breakfast={plan.breakfast_recipe_id}, meals={plan.meal_ids}")
+            return models.ApiResponse.fail("更新计划失败")
+        
+        if not result.data[0].get("success"):
+            return models.ApiResponse.fail("更新计划失败")
         
         # 获取更新后的计划详情
         response = database.supabase.table("plans").select("*").eq("id", plan_id).single().execute()
         if not response.data:
-            raise HTTPException(status_code=404, detail="Plan not found")
+            return models.ApiResponse.fail("计划不存在")
         
         print(f"[耗时] PUT /plans/{plan_id} 更新计划: {time.time()-start:.2f}s", flush=True)
         logger.info(f"[更新计划] 成功，plan_id={plan_id}")
-        return response.data
+        return models.ApiResponse.ok(response.data)
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"[更新计划] 失败: 参数=plan_id={plan_id},date={plan.date},breakfast={plan.breakfast_recipe_id},meals={plan.meal_ids}, 错误={str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="更新计划失败")
+        return models.ApiResponse.fail("更新计划失败")
 
 
-@router.delete("/{plan_id}")
+@router.delete("/{plan_id}", response_model=models.ApiResponse)
 @log_operation("删除计划")
 async def delete_plan(plan_id: str, current_user: User = Depends(get_current_user)):
     """删除计划（原子性操作）"""
     start = time.time()
     
     try:
-        # 调用原子性函数
         result = database.supabase.rpc("delete_plan_with_refresh", {
             "p_plan_id": plan_id
         }).execute()
         
-        if not result.data or not result.data[0].get("success"):
-            raise HTTPException(status_code=500, detail="删除计划失败")
+        if not result or result.data is None:
+            logger.error(f"[删除计划] RPC调用返回空数据: plan_id={plan_id}")
+            return models.ApiResponse.fail("删除计划失败")
+        
+        result_data = result.data
+        if isinstance(result_data, list):
+            if len(result_data) == 0:
+                logger.error(f"[删除计划] RPC调用返回空列表: plan_id={plan_id}")
+                return models.ApiResponse.fail("删除计划失败")
+            result_data = result_data[0]
+        
+        if not result_data.get("success"):
+            logger.error(f"[删除计划] RPC调用返回失败: plan_id={plan_id}, result={result_data}")
+            return models.ApiResponse.fail("删除计划失败")
         
         print(f"[耗时] DELETE /plans/{plan_id} 删除计划: {time.time()-start:.2f}s", flush=True)
-        logger.info(f"[删除计划] 成功，plan_id={plan_id}，移除待购项={result.data[0].get('items_removed')}")
-        return {"message": "Plan deleted", "details": result.data[0]}
+        logger.info(f"[删除计划] 成功，plan_id={plan_id}，移除待购项={result_data.get('items_removed')}")
+        return models.ApiResponse.ok(message="删除计划成功")
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"[删除计划] 失败: 参数=plan_id={plan_id}, 错误={str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="删除计划失败")
+        return models.ApiResponse.fail("删除计划失败")

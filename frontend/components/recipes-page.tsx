@@ -113,7 +113,7 @@ export function RecipesPage() {
       seen.add(key)
       const exists = inventory.some((i) => i.name === key)
       if (!exists) {
-        await addIngredient({ name: key, unit: '份', quantity: 0 })
+        await addIngredient({ name: key, quantity: 0 })
       }
     }
   }
@@ -137,7 +137,6 @@ export function RecipesPage() {
           ingredients: values.ingredients.map((i) => ({
             name: i.name,
             quantity: i.quantity,
-            unit: '',
           })),
         })
       } else if (editingRecipe) {
@@ -154,7 +153,6 @@ export function RecipesPage() {
           ingredients: values.ingredients.map((i) => ({
             name: i.name,
             quantity: i.quantity,
-            unit: '',
           })),
         })
       }

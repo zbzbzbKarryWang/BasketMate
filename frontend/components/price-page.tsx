@@ -205,7 +205,6 @@ export function PricePage() {
           } else {
             const created = await apiPost<{ id: string }>('/ingredients', {
               name: item.name,
-              unit: "斤",
               quantity: 0,
             })
             ingredientIds.set(item.name, created.id)
@@ -330,7 +329,6 @@ export function PricePage() {
       if (!ingredientId) {
         ingredientId = await addIngredient({
           name: selectedIngredient,
-          unit: "份",
           quantity: 0,
         })
       }

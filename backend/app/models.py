@@ -1,6 +1,37 @@
 from pydantic import BaseModel
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Generic, TypeVar
 from datetime import datetime
+
+# IMPORTANT: ingredients 表的 unit 字段已永久废弃，以后任何代码都不应该再使用！
+T = TypeVar("T")
+
+
+class ApiResponse(BaseModel, Generic[T]):
+    success: bool = True
+    message: Optional[str] = None
+    data: Optional[T] = None
+    
+    @classmethod
+    def ok(cls, data: T = None, message: str = None):
+        return cls(success=True, data=data, message=message)
+    
+    @classmethod
+    def fail(cls, message: str):
+        return cls(success=False, message=message)
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    is_success: bool = True
+    message: Optional[str] = None
+    data: Optional[dict] = None
+    
+    @classmethod
+    def success(cls, items: List[T], total: int, message: str = None):
+        return cls(is_success=True, data={"items": items, "total": total}, message=message)
+    
+    @classmethod
+    def error(cls, message: str):
+        return cls(is_success=False, message=message)
 
 
 class IngredientBase(BaseModel):
@@ -22,7 +53,7 @@ class IngredientUpdate(BaseModel):
 
 class IngredientResponse(IngredientBase):
     id: str
-    added_at: datetime
+    added_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -147,40 +178,41 @@ class PriceResponse(PriceBase):
 
 class PendingItem(BaseModel):
     ingredient_id: str
-    ingredient_name: str
-    need_quantity: float
-    shop_name: str
-    price: float
+    ingredient_name: Optional[str] = ""
+    need_quantity: float = 0
+    shop_name: Optional[str] = None
+    price: float = 0
     checked: bool = False
+    shop_id: Optional[str] = None
 
 
 class CustomItem(BaseModel):
     id: str
     name: str
-    need_quantity: float
+    need_quantity: float = 0
     shop_name: Optional[str] = None
     checked: bool = False
 
 
 class CompletedItem(BaseModel):
     ingredient_id: Optional[str] = None
-    ingredient_name: str
-    need_quantity: float
+    ingredient_name: Optional[str] = ""
+    need_quantity: float = 0
     is_custom: bool = False
     custom_id: Optional[str] = None
 
 
 class CheckedItem(BaseModel):
     ingredient_id: Optional[str] = None
-    ingredient_name: str
-    need_quantity: float
+    ingredient_name: Optional[str] = ""
+    need_quantity: float = 0
     is_custom: bool = False
     custom_id: Optional[str] = None
 
 
 class PurchaseTaskResponse(BaseModel):
     id: str
-    status: bool  # true=活跃, false=已完成
+    status: bool = False  # true=活跃, false=已完成
     pending_items: List[PendingItem] = []
     custom_items: List[CustomItem] = []
     completed_items: List[CompletedItem] = []

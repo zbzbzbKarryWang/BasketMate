@@ -1,10 +1,10 @@
+// IMPORTANT: ingredients 表的 unit 字段已永久废弃，以后任何代码都不应该再使用！
 // 食材类型
 export interface Ingredient {
   id: string
   name: string
   alias?: string
   quantity: number
-  unit: string
   addedAt: Date
 }
 
@@ -43,7 +43,6 @@ export interface InventoryItem {
   name: string
   alias?: string
   quantity: number
-  unit: string
   addedAt: Date
 }
 
@@ -52,7 +51,6 @@ export interface ShoppingItem {
   id: string
   name: string
   quantity: number
-  unit: string
   price: number
   store: string
   checked: boolean
@@ -85,7 +83,6 @@ export interface PendingItem {
   shop_name: string
   price: number
   need_quantity: number
-  unit: string
   checked: boolean
 }
 

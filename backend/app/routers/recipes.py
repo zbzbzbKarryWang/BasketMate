@@ -1,13 +1,14 @@
 import time
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
+from app import models as models
 from app.database import get_supabase
 from app.models import Recipe
 from app.decorators import log_operation
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
 
-@router.get("", response_model=List[Recipe])
+@router.get("")
 @log_operation("获取菜谱列表")
 async def get_recipes(
     limit: Optional[int] = Query(None, ge=1),
@@ -26,7 +27,7 @@ async def get_recipes(
 
     if not recipes:
         print(f"[耗时] GET /recipes {time.time() - start_total:.2f}s", flush=True)
-        return []
+        return models.ApiResponse.ok([])
 
     ids_set = set()
     for recipe in recipes:
@@ -56,9 +57,9 @@ async def get_recipes(
         recipe["ingredients"] = filled_ingredients
 
     print(f"[耗时] GET /recipes {time.time() - start_total:.2f}s", flush=True)
-    return recipes
+    return models.ApiResponse.ok(recipes)
 
-@router.get("/{recipe_id}", response_model=Recipe)
+@router.get("/{recipe_id}")
 @log_operation("获取菜谱详情")
 async def get_recipe(recipe_id: str):
     start = time.time()
@@ -87,4 +88,4 @@ async def get_recipe(recipe_id: str):
     recipe["ingredients"] = filled_ingredients
 
     print(f"[耗时] GET /recipes/{recipe_id} {time.time() - start:.2f}s", flush=True)
-    return recipe
+    return models.ApiResponse.ok(recipe)

@@ -4,7 +4,8 @@ from fastapi.responses import PlainTextResponse
 import time
 from datetime import datetime, timedelta
 import os
-from .routers import ingredients, recipes, plans, prices, shops, shopping
+from . import models as models
+from .routers import ingredients, recipes, plans, prices, shops, shopping, logs, import_records, blacklist
 from .logger import get_logger
 from .decorators import log_operation
 
@@ -49,109 +50,19 @@ app.include_router(plans.router)
 app.include_router(prices.router)
 app.include_router(shops.router)
 app.include_router(shopping.router)
+app.include_router(logs.router)
+app.include_router(import_records.router)
+app.include_router(blacklist.router)
 
 
 @app.get("/api/health")
 @log_operation("健康检查")
 async def health_check():
     """健康检查"""
-    return {"status": "ok"}
-
-
-@app.get("/api/logs/recent")
-@log_operation("获取最近日志")
-async def get_recent_logs(minutes: int = 10, start_time: str = None, end_time: str = None):
-    """获取最近 N 分钟的日志，或指定时间范围内的日志"""
-    log_file = "/logs/app.log"
-    if not os.path.exists(log_file):
-        return PlainTextResponse("日志文件不存在", media_type="text/plain")
-    
-    now = datetime.now()
-    cutoff_start = None
-    cutoff_end = None
-    
-    if start_time:
-        try:
-            cutoff_start = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S.%f")
-        except ValueError:
-            try:
-                cutoff_start = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                try:
-                    cutoff_start = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-                except ValueError:
-                    try:
-                        parsed = datetime.strptime(start_time, "%m-%d %H:%M:%S.%f")
-                        cutoff_start = parsed.replace(year=now.year)
-                    except ValueError:
-                        try:
-                            parsed = datetime.strptime(start_time, "%m-%d %H:%M:%S")
-                            cutoff_start = parsed.replace(year=now.year)
-                        except ValueError:
-                            try:
-                                parsed = datetime.strptime(start_time, "%m-%d %H:%M")
-                                cutoff_start = parsed.replace(year=now.year)
-                            except ValueError:
-                                cutoff_start = now - timedelta(minutes=minutes)
-    else:
-        cutoff_start = now - timedelta(minutes=minutes)
-    
-    if end_time:
-        try:
-            cutoff_end = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
-        except ValueError:
-            try:
-                cutoff_end = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                try:
-                    cutoff_end = datetime.strptime(end_time, "%Y-%m-%d %H:%M")
-                except ValueError:
-                    try:
-                        parsed = datetime.strptime(end_time, "%m-%d %H:%M:%S.%f")
-                        cutoff_end = parsed.replace(year=now.year)
-                    except ValueError:
-                        try:
-                            parsed = datetime.strptime(end_time, "%m-%d %H:%M:%S")
-                            cutoff_end = parsed.replace(year=now.year)
-                        except ValueError:
-                            try:
-                                parsed = datetime.strptime(end_time, "%m-%d %H:%M")
-                                cutoff_end = parsed.replace(year=now.year)
-                            except ValueError:
-                                cutoff_end = now
-    
-    logs = []
-    
-    try:
-        with open(log_file, "r", encoding="utf-8") as f:
-            for line in f:
-                try:
-                    log_time_str = line[:23]
-                    log_time = datetime.strptime(log_time_str, "%Y-%m-%d %H:%M:%S.%f")
-                    if cutoff_start and log_time < cutoff_start:
-                        continue
-                    if cutoff_end and log_time > cutoff_end:
-                        continue
-                    logs.append(line.rstrip("\n"))
-                except (ValueError, IndexError):
-                    try:
-                        log_time_str = line[:19]
-                        log_time = datetime.strptime(log_time_str, "%Y-%m-%d %H:%M:%S")
-                        if cutoff_start and log_time < cutoff_start:
-                            continue
-                        if cutoff_end and log_time > cutoff_end:
-                            continue
-                        logs.append(line.rstrip("\n"))
-                    except (ValueError, IndexError):
-                        logs.append(line.rstrip("\n"))
-    except Exception as e:
-        return PlainTextResponse(f"读取日志失败: {str(e)}", media_type="text/plain")
-    
-    result = "\n".join(logs[-500:])
-    return PlainTextResponse(result, media_type="text/plain")
+    return models.ApiResponse.ok({"status": "ok"})
 
 
 @app.get("/")
 @log_operation("根路径")
 async def root():
-    return {"message": "BasketMate API", "docs": "/docs"}
+    return models.ApiResponse.ok({"message": "BasketMate API", "docs": "/docs"})
