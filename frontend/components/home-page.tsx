@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from 'react'
-import { CalendarDays, ShoppingCart, Utensils, Package, FileText, FolderOpen, FileUp, Trash2, Edit3, Eye } from 'lucide-react'
+import { CalendarDays, ShoppingCart, Utensils, Package, FileText, FolderOpen, FileUp, Trash2, Edit3, Eye, Bot } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAppStore } from '@/lib/store'
 import { useData } from '@/contexts/DataContext'
@@ -419,17 +419,30 @@ export function HomePage() {
           </Card>
         </div>
 
-        <Card 
-          className="shadow-sm cursor-pointer hover:shadow-md transition-shadow mt-4"
-          onClick={handleWhatsForDinner}
-        >
-          <CardContent className="flex items-center justify-center gap-2 p-2.5">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-              <Utensils className="w-4 h-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium">吃什么</span>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <Card 
+            className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            onClick={handleWhatsForDinner}
+          >
+            <CardContent className="flex items-center justify-center gap-2 p-2.5">
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                <Utensils className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium">吃什么</span>
+            </CardContent>
+          </Card>
+          <Card 
+            className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => router.push('/ai-chat')}
+          >
+            <CardContent className="flex items-center justify-center gap-2 p-2.5">
+              <div className="w-7 h-7 rounded-full bg-secondary/10 flex items-center justify-center text-lg">
+                👩‍🍳
+              </div>
+              <span className="text-sm font-medium">厨房搭子</span>
+            </CardContent>
+          </Card>
+        </div>
       </main>
 
       <ConfirmModal

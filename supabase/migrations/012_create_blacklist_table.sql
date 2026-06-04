@@ -13,6 +13,7 @@ CREATE INDEX IF NOT EXISTS idx_blacklist_pattern ON public.blacklist (pattern);
 
 -- 启用行级安全
 ALTER TABLE public.blacklist ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "blacklist_all" ON public.blacklist;
 CREATE POLICY "blacklist_all" ON public.blacklist FOR ALL USING (true) WITH CHECK (true);
 
 -- 为 import_records 添加 deleted_patterns 列

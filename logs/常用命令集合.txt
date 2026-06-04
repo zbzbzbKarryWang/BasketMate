@@ -43,3 +43,5 @@ python test_api_speed.py	测试所有后端 API 响应时间
 python test_all_endpoints.py	全量测试所有 API 端点性能（含批量更新）
 python test_batch_update.py	单独测试批量更新接口
 Select-String -Path "backend\app\*.py" -Pattern "unit" -SimpleMatch
+
+docker compose ps 查看使用端口

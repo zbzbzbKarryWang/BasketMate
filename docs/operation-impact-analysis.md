@@ -122,6 +122,34 @@
 - 修改库存后，检查是否影响采购清单中的待购项
 - 对受影响的食材重新计算缺货量
 
+### 6. 完成采购 → 用户偏好自动学习
+
+**场景**：用户完成采购，将食材加入库存
+
+**影响**：
+- 完成采购代表用户执行了某个计划
+- 该计划中的菜谱ID应自动加入 `user_profiles.favorite_recipes`
+- 采购的食材名称应自动加入 `user_profiles.favorite_ingredients`
+
+**联动表**：`user_profiles`
+
+**当前状态**：✅ 已实现
+
+**实现说明**：
+- `complete_purchase_task` RPC 函数在完成采购时会调用 `update_user_preference_from_purchase`
+- 自动将计划关联的菜谱ID追加到 `favorite_recipes`（去重）
+- 自动将采购的食材名称追加到 `favorite_ingredients`（去重）
+- 实现用户偏好的**自动学习**功能
+
+**示例**：
+```sql
+-- 用户完成采购后，系统自动：
+UPDATE user_profiles SET
+  favorite_recipes = array_distinct(favorite_recipes ||计划的菜谱ID数组),
+  favorite_ingredients = array_distinct(favorite_ingredients || 采购的食材名称数组)
+WHERE user_id = 'default';
+```
+
 ---
 
 ## 四、事务性问题分析

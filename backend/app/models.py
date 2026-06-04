@@ -8,16 +8,21 @@ T = TypeVar("T")
 
 class ApiResponse(BaseModel, Generic[T]):
     success: bool = True
-    message: Optional[str] = None
+    message: str = ""
     data: Optional[T] = None
     
     @classmethod
-    def ok(cls, data: T = None, message: str = None):
+    def ok(cls, data: T = None, message: str = "操作成功"):
         return cls(success=True, data=data, message=message)
     
     @classmethod
-    def fail(cls, message: str):
-        return cls(success=False, message=message)
+    def fail(cls, message: str, data: Any = None):
+        return cls(success=False, message=message, data=data)
+    
+    @classmethod
+    def error(cls, message: str, data: Any = None):
+        """error() 作为 fail() 的别名，保持向后兼容"""
+        return cls(success=False, message=message, data=data)
 
 
 class PaginatedResponse(BaseModel, Generic[T]):

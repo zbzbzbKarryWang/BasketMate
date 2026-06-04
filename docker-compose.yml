@@ -15,6 +15,7 @@ services:
       - BAIDU_OCR_SECRET_KEY=${BAIDU_OCR_SECRET_KEY}
       - LLM_API_URL=${LLM_API_URL}
       - LLM_API_KEY=${LLM_API_KEY}
+      - BOCHAAI_API_KEY=${BOCHAAI_API_KEY}
     restart: unless-stopped
     volumes:
       - ./backend/logs:/logs

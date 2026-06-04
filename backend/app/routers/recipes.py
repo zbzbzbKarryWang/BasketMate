@@ -1,10 +1,12 @@
 import time
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse
 from typing import List, Optional
 from app import models as models
 from app.database import get_supabase
 from app.models import Recipe
 from app.decorators import log_operation
+from app.services.user_profile_service import filter_recipes_by_preference, get_recipe_ingredient_names
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
 
@@ -56,6 +58,9 @@ async def get_recipes(
             })
         recipe["ingredients"] = filled_ingredients
 
+    # 根据用户偏好过滤和排序
+    recipes = filter_recipes_by_preference(recipes, id_name_map)
+
     print(f"[耗时] GET /recipes {time.time() - start_total:.2f}s", flush=True)
     return models.ApiResponse.ok(recipes)
 
@@ -66,7 +71,10 @@ async def get_recipe(recipe_id: str):
     db = get_supabase()
     resp = db.table("recipes").select("*").eq("id", recipe_id).execute()
     if not resp.data:
-        raise HTTPException(status_code=404, detail="Recipe not found")
+        return JSONResponse(
+            status_code=404,
+            content=models.ApiResponse.fail("Recipe not found").dict()
+        )
 
     recipe = resp.data[0]
     ingredients = recipe.get("ingredients") or []
@@ -87,5 +95,5 @@ async def get_recipe(recipe_id: str):
         })
     recipe["ingredients"] = filled_ingredients
 
-    print(f"[耗时] GET /recipes/{recipe_id} {time.time() - start:.2f}s", flush=True)
+    print(f"[耗时] GET /recipes/{recipe_id} {time.time()-start:.2f}s", flush=True)
     return models.ApiResponse.ok(recipe)

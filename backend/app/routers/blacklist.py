@@ -1,10 +1,12 @@
 """
 黑名单管理路由
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from datetime import datetime
 from .. import database
+from .. import models as models
 from ..services.ocr_service import add_to_blacklist
 
 router = APIRouter(
@@ -24,13 +26,16 @@ class BlacklistItem(BaseModel):
     created_at: datetime
 
 
-@router.post("", response_model=BlacklistItem)
+@router.post("", response_model=models.ApiResponse[BlacklistItem])
 async def create_blacklist_item(item: BlacklistCreate):
     """
     添加黑名单模式
     """
     if not item.pattern.strip():
-        raise HTTPException(status_code=400, detail="Pattern cannot be empty")
+        return JSONResponse(
+            status_code=400,
+            content=models.ApiResponse.fail("Pattern cannot be empty").dict()
+        )
     
     try:
         response = database.supabase.table("blacklist").insert({
@@ -42,17 +47,24 @@ async def create_blacklist_item(item: BlacklistCreate):
             new_item = response.data[0]
             # 实时更新内存中的黑名单
             add_to_blacklist(item.pattern.strip())
-            return BlacklistItem(
+            result = BlacklistItem(
                 id=new_item.get("id"),
                 pattern=new_item.get("pattern"),
                 created_at=datetime.fromisoformat(new_item.get("created_at")),
             )
-        raise HTTPException(status_code=500, detail="Failed to create blacklist item")
+            return models.ApiResponse.ok(result, message="添加成功")
+        return JSONResponse(
+            status_code=500,
+            content=models.ApiResponse.fail("Failed to create blacklist item").dict()
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(
+            status_code=500,
+            content=models.ApiResponse.fail(str(e)).dict()
+        )
 
 
-@router.get("", response_model=list[BlacklistItem])
+@router.get("", response_model=models.ApiResponse[list[BlacklistItem]])
 async def get_blacklist_items():
     """
     获取所有黑名单模式
@@ -66,9 +78,12 @@ async def get_blacklist_items():
                 pattern=item.get("pattern"),
                 created_at=datetime.fromisoformat(item.get("created_at")),
             ))
-        return items
+        return models.ApiResponse.ok(items)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(
+            status_code=500,
+            content=models.ApiResponse.fail(str(e)).dict()
+        )
 
 
 @router.delete("/{item_id}")
@@ -79,7 +94,13 @@ async def delete_blacklist_item(item_id: str):
     try:
         response = database.supabase.table("blacklist").delete().eq("id", item_id).execute()
         if response.data and len(response.data) > 0:
-            return {"success": True, "message": "Deleted successfully"}
-        raise HTTPException(status_code=404, detail="Item not found")
+            return models.ApiResponse.ok(message="Deleted successfully")
+        return JSONResponse(
+            status_code=404,
+            content=models.ApiResponse.fail("Item not found").dict()
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(
+            status_code=500,
+            content=models.ApiResponse.fail(str(e)).dict()
+        )

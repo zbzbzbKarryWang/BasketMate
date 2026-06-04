@@ -24,31 +24,38 @@ async function request<T>(
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.log('error', `API请求失败: ${method} ${endpoint} - HTTP ${response.status}`, 'APIClient', 'request')
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-
     const text = await response.text();
-    if (!text) {
+    let parsed: any;
+
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // 如果响应不是 JSON，直接用文本
+      if (!response.ok) {
+        logger.log('error', `API请求失败: ${method} ${endpoint} - HTTP ${response.status}`, 'APIClient', 'request')
+        throw new Error(`HTTP ${response.status}: ${text}`);
+      }
       return {} as T;
     }
 
-    const parsed = JSON.parse(text);
-
-    if (!('success' in parsed)) {
-      throw new Error(`API 响应格式错误：缺少 success 字段，endpoint: ${endpoint}`);
+    if ('success' in parsed) {
+      const apiResponse = parsed as ApiResponse<T>;
+      if (!apiResponse.success) {
+        logger.log('warn', `API操作失败: ${endpoint} - ${apiResponse.message}`, 'APIClient', 'request')
+        throw new Error(apiResponse.message || '操作失败');
+      }
+      logger.log('log', `API请求成功: ${method} ${endpoint}`, 'APIClient', 'request')
+      return apiResponse.data as T;
     }
 
-    const apiResponse = parsed as ApiResponse<T>;
-    if (!apiResponse.success) {
-      logger.log('warn', `API操作失败: ${endpoint} - ${apiResponse.message}`, 'APIClient', 'request')
-      throw new Error(apiResponse.message || '操作失败');
+    // 旧格式兼容（直接返回数据）
+    if (response.ok) {
+      logger.log('log', `API请求成功: ${method} ${endpoint}`, 'APIClient', 'request')
+      return parsed as T;
     }
 
-    logger.log('log', `API请求成功: ${method} ${endpoint}`, 'APIClient', 'request')
-    return apiResponse.data as T;
+    logger.log('error', `API请求失败: ${method} ${endpoint} - HTTP ${response.status}`, 'APIClient', 'request')
+    throw new Error(`HTTP ${response.status}: ${text}`);
   } catch (error) {
     logger.log('error', `API请求异常: ${method} ${endpoint} - ${error}`, 'APIClient', 'request')
     throw error;

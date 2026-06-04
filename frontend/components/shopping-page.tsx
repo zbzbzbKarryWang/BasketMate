@@ -16,6 +16,7 @@ import {
 import { RecipeDrawer } from "@/components/recipe-drawer"
 import { ConfirmModal } from "@/components/confirm-modal"
 import { useData } from "@/contexts/DataContext"
+import { apiGet, apiPost, apiPut } from "@/lib/api-client"
 import type { Recipe, PendingItem, CustomItem } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -77,6 +78,9 @@ export function ShoppingPage() {
       let successCount = 0
       let errorCount = 0
       
+      // 首先获取所有库存数据
+      const inventoryData = await apiGet<any[]>('/ingredients')
+      
       for (let i = 1; i < lines.length; i++) {
         const parts = lines[i].split(',').map(p => p.trim())
         if (parts.length < 2) continue
@@ -90,34 +94,19 @@ export function ShoppingPage() {
         }
         
         try {
-          const response = await fetch('/api/proxy/ingredients', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          })
-          if (response.ok) {
-            const inventoryData = await response.json()
-            const existingItem = inventoryData.find((item: any) => 
-              item.name.toLowerCase() === name.toLowerCase()
-            )
-            
-            if (existingItem) {
-              await fetch(`/api/proxy/ingredients/${existingItem.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  quantity: existingItem.quantity + quantity,
-                  added_at: new Date().toISOString()
-                })
-              })
-            } else {
-              await fetch('/api/proxy/ingredients', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, quantity })
-              })
-            }
-            successCount++
+          const existingItem = inventoryData.find((item: any) => 
+            item.name.toLowerCase() === name.toLowerCase()
+          )
+          
+          if (existingItem) {
+            await apiPut(`/ingredients/${existingItem.id}`, { 
+              quantity: existingItem.quantity + quantity,
+              added_at: new Date().toISOString()
+            })
+          } else {
+            await apiPost('/ingredients', { name, quantity })
           }
+          successCount++
         } catch {
           errorCount++
         }
@@ -136,21 +125,15 @@ export function ShoppingPage() {
 
   const refreshTask = useCallback(async () => {
     try {
-      const response = await fetch('/api/shopping/task')
-      if (response.ok) {
-        const apiResponse = await response.json()
-        if (apiResponse.success) {
-          const data = apiResponse.data || {}
-          setPendingItems(data.pending_items || [])
-          setCustomItems(data.custom_items || [])
-          setCompletedItems(data.completed_items || [])
-          setRemovedIngredientIds(data.removed_ingredient_ids || [])
-          
-          const allItems = [...(data.pending_items || []), ...(data.custom_items || [])]
-          const stores = new Set(allItems.map(item => item.shop_name || "待定"))
-          setExpandedStores(stores)
-        }
-      }
+      const data = await apiGet<any>('/shopping/task')
+      setPendingItems(data.pending_items || [])
+      setCustomItems(data.custom_items || [])
+      setCompletedItems(data.completed_items || [])
+      setRemovedIngredientIds(data.removed_ingredient_ids || [])
+      
+      const allItems = [...(data.pending_items || []), ...(data.custom_items || [])]
+      const stores = new Set(allItems.map(item => item.shop_name || "待定"))
+      setExpandedStores(stores)
     } catch (error) {
       console.error('Failed to fetch purchase task:', error)
     }
@@ -213,21 +196,11 @@ export function ShoppingPage() {
   const handleDelete = useCallback(async (ingredientId: string) => {
     setSaving(true)
     try {
-      const response = await fetch('/api/shopping/task/delete-item', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ingredient_id: ingredientId })
-      })
-      if (response.ok) {
-        const apiResponse = await response.json()
-        if (apiResponse.success) {
-          const data = apiResponse.data || {}
-          setPendingItems(data.pending_items || [])
-          setCustomItems(data.custom_items || [])
-          setCompletedItems(data.completed_items || [])
-          setRemovedIngredientIds(data.removed_ingredient_ids || [])
-        }
-      }
+      const data = await apiPost<any>('/shopping/task/delete-item', { ingredient_id: ingredientId })
+      setPendingItems(data.pending_items || [])
+      setCustomItems(data.custom_items || [])
+      setCompletedItems(data.completed_items || [])
+      setRemovedIngredientIds(data.removed_ingredient_ids || [])
     } catch (error) {
       console.error('Failed to delete item:', error)
     } finally {
@@ -252,28 +225,13 @@ export function ShoppingPage() {
         }
       })
       
-      const response = await fetch('/api/shopping/task/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checked_items: payload })
-      })
-      
-      if (response.ok) {
-        const apiResponse = await response.json()
-        if (apiResponse.success) {
-          const data = apiResponse.data || {}
-          setPendingItems(data.pending_items || [])
-          setCustomItems(data.custom_items || [])
-          setCompletedItems(data.completed_items || [])
-          setRemovedIngredientIds(data.removed_ingredient_ids || [])
-          setHasUnsavedChanges(false)
-          setShowCompleteSuccess(true)
-        } else {
-          setShowCompleteError(true)
-        }
-      } else {
-        setShowCompleteError(true)
-      }
+      const data = await apiPost<any>('/shopping/task/complete', { checked_items: payload })
+      setPendingItems(data.pending_items || [])
+      setCustomItems(data.custom_items || [])
+      setCompletedItems(data.completed_items || [])
+      setRemovedIngredientIds(data.removed_ingredient_ids || [])
+      setHasUnsavedChanges(false)
+      setShowCompleteSuccess(true)
     } catch (error) {
       console.error('Failed to complete purchase:', error)
       setShowCompleteError(true)
@@ -285,26 +243,12 @@ export function ShoppingPage() {
   const handleClear = useCallback(async () => {
     setSaving(true)
     try {
-      const response = await fetch('/api/shopping/task/clear', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      
-      if (response.ok) {
-        const apiResponse = await response.json()
-        if (apiResponse.success) {
-          const data = apiResponse.data || {}
-          setPendingItems(data.pending_items || [])
-          setCustomItems(data.custom_items || [])
-          setCompletedItems(data.completed_items || [])
-          setRemovedIngredientIds(data.removed_ingredient_ids || [])
-          setShowClearSuccess(true)
-        } else {
-          setShowClearError(true)
-        }
-      } else {
-        setShowClearError(true)
-      }
+      const data = await apiPost<any>('/shopping/task/clear', {})
+      setPendingItems(data.pending_items || [])
+      setCustomItems(data.custom_items || [])
+      setCompletedItems(data.completed_items || [])
+      setRemovedIngredientIds(data.removed_ingredient_ids || [])
+      setShowClearSuccess(true)
     } catch (error) {
       console.error('Failed to clear task:', error)
       setShowClearError(true)
@@ -337,11 +281,7 @@ export function ShoppingPage() {
       for (const ing of recipe.ingredients) {
         const existingIng = inventory.find(i => i.id === ing.ingredient_id)
         if (existingIng && existingIng.quantity <= 0) {
-          await fetch('/api/shopping/task/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ingredient_id: ing.ingredient_id })
-          })
+          await apiPost('/shopping/task/add', { ingredient_id: ing.ingredient_id })
         }
       }
       await refreshTask()

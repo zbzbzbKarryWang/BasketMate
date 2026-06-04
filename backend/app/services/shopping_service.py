@@ -31,7 +31,7 @@ def compute_pending_items(
     
     # 过滤日期 >= today 的计划
     filtered_plans = []
-    for plan in filtered_plans:
+    for plan in plan_rows:
         plan_date = plan.get("date", "")
         if plan_date and plan_date >= today:
             filtered_plans.append(plan)
@@ -235,14 +235,9 @@ def update_pending_items_with_sources(
         "sources": { "plan_id_1": 1.0, "plan_id_2": 1.0 }  # 新增字段
     }
     """
+    from datetime import datetime
     # 获取当前活跃任务
-    task = supabase_client.table("purchase_tasks").select("*").eq("status", "active").maybe_single().execute()
-    if not task or not task.data:
-        return
-    
-    task_data = task.data
-    pending_items = task_data.get("pending_items", [])
-    blacklist = task_data.get("removed_ingredient_ids", [])
+    task = supabase_client.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
     
     # 获取库存用于计算缺货量
     inventory = supabase_client.table("ingredients").select("id, name, quantity").execute().data or []
@@ -257,6 +252,52 @@ def update_pending_items_with_sources(
             p = price.get("price", 0)
             if ing_id not in price_map or p < price_map[ing_id][0]:
                 price_map[ing_id] = (p, price.get("shop_name", "待定"))
+    
+    if not task or not task.data:
+        # 没有活跃任务，如果是创建或更新操作，则创建新任务
+        if operation in ('created', 'updated') and new_requirements:
+            pending_items = []
+            blacklist = []
+            
+            for ing_id, need_qty in new_requirements.items():
+                if ing_id in blacklist:
+                    continue
+                
+                inventory_ing = inventory_map.get(ing_id)
+                if not inventory_ing:
+                    continue
+                
+                stock = inventory_ing.get("quantity", 0)
+                if need_qty <= stock:
+                    continue  # 库存充足，不需要采购
+                
+                best_price, best_shop = price_map.get(ing_id, (None, "待定"))
+                
+                pending_items.append({
+                    "ingredient_id": ing_id,
+                    "ingredient_name": inventory_ing.get("name", "未知"),
+                    "need_quantity": need_qty - stock,
+                    "shop_name": best_shop,
+                    "price": best_price or 0,
+                    "checked": False,
+                    "sources": {plan_id: need_qty}
+                })
+            
+            if pending_items:
+                # 创建新任务
+                supabase_client.table("purchase_tasks").insert({
+                    "status": True,  # true=活跃
+                    "pending_items": pending_items,
+                    "custom_items": [],
+                    "completed_items": [],
+                    "removed_ingredient_ids": blacklist
+                }).execute()
+                logger.info(f"[update_pending_items] 已创建新的采购任务，待购项数量: {len(pending_items)}")
+        return
+    
+    task_data = task.data
+    pending_items = task_data.get("pending_items", [])
+    blacklist = task_data.get("removed_ingredient_ids", [])
     
     if operation in ('created', 'updated'):
         if not new_requirements:
@@ -348,3 +389,4 @@ def update_pending_items_with_sources(
     supabase_client.table("purchase_tasks").update({
         "pending_items": pending_items
     }).eq("id", task_data["id"]).execute()
+    logger.info(f"[update_pending_items] 已更新采购任务，待购项数量: {len(pending_items)}")
