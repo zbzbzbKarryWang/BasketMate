@@ -48761,3 +48761,507 @@ During task with name 'agent' and id '31071e77-3d7c-1b4f-b093-d488e4f14bd0'
 2026-06-04 13:18:39.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: done
 2026-06-04 13:23:29.%f.INFO basketmate [OCR Service] 加载了 142 个食材，构建了 359 个别名映射
 2026-06-04 13:23:30.%f.INFO basketmate [OCR Service] 加载了 7 个黑名单模式
+2026-06-04 13:25:33.%f.INFO basketmate [OCR Service] 加载了 142 个食材，构建了 359 个别名映射
+2026-06-04 13:25:34.%f.INFO basketmate [OCR Service] 加载了 7 个黑名单模式
+2026-06-04 13:25:52.%f.INFO basketmate [获取食材列表] 开始
+2026-06-04 13:25:53.%f.INFO basketmate [获取食材列表] 结果: 共142条
+2026-06-04 13:25:53.%f.INFO basketmate "GET /api/ingredients 200 887ms"
+2026-06-04 13:25:53.%f.INFO basketmate [获取菜谱列表] 开始
+2026-06-04 13:25:53.%f.INFO basketmate [获取菜谱列表] 参数: limit=None, offset=None
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 忌口食材: {'香菇', '苦瓜'}
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 喜爱菜谱: set()
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 喜爱食材: {'虾'}
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '鸡公煲' (包含忌口食材)
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '香菇炒肉末' (包含忌口食材)
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '煎香菇' (包含忌口食材)
+2026-06-04 13:25:54.%f.INFO basketmate [filter_recipes_by_preference] 过滤后菜谱数量: 45
+2026-06-04 13:25:54.%f.INFO basketmate [获取菜谱列表] 结果: 共45条
+2026-06-04 13:25:54.%f.INFO basketmate "GET /api/recipes 200 1188ms"
+2026-06-04 13:25:54.%f.INFO basketmate [获取计划列表] 开始
+2026-06-04 13:25:55.%f.INFO basketmate [获取计划列表] 结果: <starlette.responses.JSONResponse object at 0x77e6cb8dad10>
+2026-06-04 13:25:55.%f.INFO basketmate "GET /api/plans 200 382ms"
+2026-06-04 13:25:55.%f.INFO basketmate [获取价格列表] 开始
+2026-06-04 13:25:55.%f.INFO basketmate [获取价格列表] 结果: 共49条
+2026-06-04 13:25:55.%f.INFO basketmate "GET /api/prices 200 387ms"
+2026-06-04 13:25:55.%f.INFO basketmate [获取店铺列表] 开始
+2026-06-04 13:25:55.%f.INFO basketmate [获取店铺列表] 结果: 共4条
+2026-06-04 13:25:55.%f.INFO basketmate "GET /api/shops 200 380ms"
+2026-06-04 13:25:55.%f.INFO basketmate [获取采购任务] 开始
+2026-06-04 13:25:56.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-04 13:25:56.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-04 13:25:56.%f.INFO basketmate "GET /api/shopping/task 200 381ms"
+2026-06-04 13:26:00.%f.INFO basketmate.ai_chat [ai_chat:default] 收到请求，用户消息: 生成个今天的用餐计划
+2026-06-04 13:26:00.%f.INFO basketmate.ai_chat [ai_chat:default] 消息数: 3, 确认响应: 无
+2026-06-04 13:26:00.%f.INFO basketmate.ai_chat [ai_chat:default] 流式开始，消息数=3
+2026-06-04 13:26:00.%f.INFO basketmate.agent [agent:default] 用户消息: 生成个今天的用餐计划
+2026-06-04 13:26:00.%f.INFO basketmate.agent [agent:default] 开始执行，消息数=3
+2026-06-04 13:26:01.%f.INFO basketmate.agent [agent] LLM: model=deepseek-chat, base_url=https://api.deepseek.com/v1
+2026-06-04 13:26:01.%f.INFO basketmate.agent [agent] 已加载 53 个工具 (含 ask_confirmation)
+2026-06-04 13:26:01.%f.INFO basketmate.agent [agent] ReAct Agent 创建完成
+2026-06-04 13:26:01.%f.INFO basketmate "POST /api/ai/chat 200 1358ms"
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:03.%f.INFO basketmate.agent [agent:default] 工具调用: get_user_preference_summary, 参数: {}
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_call
+2026-06-04 13:26:03.%f.INFO basketmate.agent [agent:default] 工具调用: get_all_ingredients, 参数: {}
+2026-06-04 13:26:03.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_call
+2026-06-04 13:26:04.%f.INFO basketmate [tool:get_all_ingredients] 共 142 条
+2026-06-04 13:26:04.%f.INFO basketmate.agent [agent:default] 工具完成: get_all_ingredients, 返回值: "content='[{\"id\": \"73f7f710-bce3-4ffb-8a46-f592f3782dea\", \"name\": \"玉米\", \"quantity\": 2, \"added_at\": \"2026-06-02T10:54:13.708989+00:00\", \"alias\": \"玉米粒、甜玉米\"}, {\"id\": \"f75fa2de-b45d-4
+2026-06-04 13:26:04.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_result
+2026-06-04 13:26:05.%f.INFO basketmate [tool:get_user_preference_summary] 生成摘要完成
+2026-06-04 13:26:05.%f.INFO basketmate.agent [agent:default] 工具完成: get_user_preference_summary, 返回值: "content='{\"favorite_recipes_count\": 0, \"favorite_ingredients_count\": 1, \"disliked_ingredients_count\": 2, \"disliked_ingredients\": [\"香菇\", \"苦瓜\"], \"top_recipes\": [{\"id\": \"44bc7ca5-4776-4
+2026-06-04 13:26:05.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_result
+2026-06-04 13:26:06.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:08.%f.INFO basketmate.agent [agent:default] 工具调用: generate_meal_plan, 参数: {"strategy": "inventory_first", "start_date": "today", "days": 1}
+2026-06-04 13:26:08.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_call
+2026-06-04 13:26:09.%f.INFO basketmate [tool:generate_meal_plan] strategy=inventory_first, days=1, recipes=3
+2026-06-04 13:26:09.%f.INFO basketmate.agent [agent:default] 工具完成: generate_meal_plan, 返回值: "content='{\"days\": [{\"date\": \"2026-06-04\", \"day_name\": \"周四\", \"slots\": [{\"meal_type\": \"breakfast\", \"recipe_id\": \"08cba0d6-70b4-4708-ad8b-c13d314a0c26\", \"recipe_name\": \"猪排\", \"re
+2026-06-04 13:26:09.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_result
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:10.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:11.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:12.%f.INFO basketmate.agent [agent:default] 最终回复: 来看看今天（周四）的用餐计划草案 🎉
+
+---
+
+### 🍳 早餐 — 猪排
+用上库存的酱油、淀粉、洋葱、番茄酱、黑胡椒粉、鸡蛋、蚝油，香煎猪排开启元气一天！
+
+### 🥘 午餐 — 香辣虾
+库存有虾🦐、干辣椒、蒜、豆瓣酱、姜，正好做一道香辣过瘾的虾！
+
+### 🍛 晚餐 — 鱼香肉丝
+木耳、蒜、豆瓣酱、姜都有，经典下饭菜安排上～
+
+---
+
+你觉得这个计划怎么样？如果满意的话，我帮你正式创建今天的计划！或者你想调整某顿饭？😊
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: text
+2026-06-04 13:26:12.%f.INFO basketmate.agent [agent:default] 执行完成，耗时 11.9s，工具调用次数=3
+2026-06-04 13:26:12.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: done
+2026-06-04 13:26:19.%f.INFO basketmate.ai_chat [ai_chat:default] 收到请求，用户消息: 生成个今天的用餐计划
+2026-06-04 13:26:19.%f.INFO basketmate.ai_chat [ai_chat:default] 消息数: 5, 确认响应: 无
+2026-06-04 13:26:19.%f.INFO basketmate.ai_chat [ai_chat:default] 流式开始，消息数=5
+2026-06-04 13:26:19.%f.INFO basketmate.agent [agent:default] 用户消息: 生成个今天的用餐计划
+2026-06-04 13:26:19.%f.INFO basketmate.agent [agent:default] 开始执行，消息数=5
+2026-06-04 13:26:19.%f.INFO basketmate.agent [agent] 已加载 53 个工具 (含 ask_confirmation)
+2026-06-04 13:26:19.%f.INFO basketmate.agent [agent] ReAct Agent 创建完成
+2026-06-04 13:26:19.%f.INFO basketmate "POST /api/ai/chat 200 149ms"
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:20.%f.INFO basketmate.agent [agent:default] 工具调用: generate_meal_plan, 参数: {"start_date": "tomorrow", "days": 1, "strategy": "no_repeat"}
+2026-06-04 13:26:20.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_call
+2026-06-04 13:26:23.%f.INFO basketmate [tool:generate_meal_plan] strategy=no_repeat, days=1, recipes=3
+2026-06-04 13:26:23.%f.INFO basketmate.agent [agent:default] 工具完成: generate_meal_plan, 返回值: "content='{\"days\": [{\"date\": \"2026-06-05\", \"day_name\": \"周五\", \"slots\": [{\"meal_type\": \"breakfast\", \"recipe_id\": \"baeeb4b1-8e13-4fb7-86fa-7c586b518268\", \"recipe_name\": \"香辣虾\", \"r
+2026-06-04 13:26:23.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: tool_result
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:24.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: thought
+2026-06-04 13:26:25.%f.INFO basketmate.agent [agent:default] 最终回复: 明天（周五）的计划也安排好了！👇
+
+---
+
+### 🍳 早餐 — 香辣虾
+用上库存的干辣椒、虾、生抽，早上来点香辣提神！
+
+### 🥘 午餐 — 鸡蛋羹
+简单又营养，葱、盐、鸡蛋都有，嫩滑可口～
+
+### 🍛 晚餐 — 糖醋土豆火腿烩饭
+土豆、蒜、淀粉都有，糖醋口味超下饭！
+
+---
+
+现在两天计划都有了，你看要不要一起创建？或者想调整哪一顿？😊
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: text
+2026-06-04 13:26:25.%f.INFO basketmate.agent [agent:default] 执行完成，耗时 6.3s，工具调用次数=1
+2026-06-04 13:26:25.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: done
+2026-06-04 13:37:43.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:37:45.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:37:45.%f.INFO basketmate "GET /api/import/records 200 1828ms"
+2026-06-04 13:37:45.%f.INFO basketmate [获取采购任务] 开始
+2026-06-04 13:37:45.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-04 13:37:45.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-04 13:37:45.%f.INFO basketmate "GET /api/shopping/task 200 407ms"
+2026-06-04 13:37:48.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:37:48.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:37:48.%f.INFO basketmate "GET /api/import/records 200 400ms"
+2026-06-04 13:37:51.%f.INFO basketmate [获取采购任务] 开始
+2026-06-04 13:37:51.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-04 13:37:51.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-04 13:37:51.%f.INFO basketmate "GET /api/shopping/task 200 391ms"
+2026-06-04 13:37:52.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:37:53.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:37:53.%f.INFO basketmate "GET /api/import/records 200 388ms"
+2026-06-04 13:38:07.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:38:08.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:38:08.%f.INFO basketmate "GET /api/import/records 200 1138ms"
+2026-06-04 13:38:22.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:38:23.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:38:23.%f.INFO basketmate "GET /api/import/records 200 857ms"
+2026-06-04 13:38:37.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:38:39.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:38:39.%f.INFO basketmate "GET /api/import/records 200 1544ms"
+2026-06-04 13:38:52.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:38:53.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:38:53.%f.INFO basketmate "GET /api/import/records 200 868ms"
+2026-06-04 13:39:07.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:39:08.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:39:08.%f.INFO basketmate "GET /api/import/records 200 901ms"
+2026-06-04 13:39:22.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:39:23.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:39:23.%f.INFO basketmate "GET /api/import/records 200 853ms"
+2026-06-04 13:39:37.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:39:38.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:39:38.%f.INFO basketmate "GET /api/import/records 200 834ms"
+2026-06-04 13:39:52.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:39:53.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:39:53.%f.INFO basketmate "GET /api/import/records 200 1154ms"
+2026-06-04 13:40:07.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:40:08.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:40:08.%f.INFO basketmate "GET /api/import/records 200 851ms"
+2026-06-04 13:40:23.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:40:23.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:40:23.%f.INFO basketmate "GET /api/import/records 200 851ms"
+2026-06-04 13:40:38.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:40:39.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:40:39.%f.INFO basketmate "GET /api/import/records 200 1142ms"
+2026-06-04 13:40:53.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:40:54.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:40:54.%f.INFO basketmate "GET /api/import/records 200 1123ms"
+2026-06-04 13:41:08.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:41:08.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:41:08.%f.INFO basketmate "GET /api/import/records 200 363ms"
+2026-06-04 13:41:40.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-04 13:41:41.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
+2026-06-04 13:41:41.%f.INFO basketmate "GET /api/import/records 200 397ms"

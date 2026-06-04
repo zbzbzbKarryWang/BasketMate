@@ -10,11 +10,11 @@ const nextConfig = {
     return [
       {
         source: '/api/proxy/:path*',
-        destination: 'http://backend:8000/api/:path*',
+        destination: (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://backend:8000') + '/api/:path*',
       },
       {
         source: '/api/shopping/:path*',
-        destination: 'http://backend:8000/api/shopping/:path*',
+        destination: (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://backend:8000') + '/api/shopping/:path*',
       },
     ]
   },
