@@ -49345,3 +49345,212 @@ During task with name 'agent' and id '31071e77-3d7c-1b4f-b093-d488e4f14bd0'
 2026-06-06 01:35:06.%f.INFO basketmate [获取导入记录列表] 开始
 2026-06-06 01:35:07.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
 2026-06-06 01:35:07.%f.INFO basketmate "GET /api/import/records 200 996ms"
+2026-06-06 01:39:14.%f.INFO basketmate [OCR Service] 加载了 142 个食材，构建了 359 个别名映射
+2026-06-06 01:39:15.%f.INFO basketmate [OCR Service] 加载了 7 个黑名单模式
+2026-06-06 01:39:23.%f.INFO basketmate [获取食材列表] 开始
+2026-06-06 01:39:26.%f.INFO basketmate [获取食材列表] 结果: 共142条
+2026-06-06 01:39:26.%f.INFO basketmate "GET /api/ingredients 200 2710ms"
+2026-06-06 01:39:26.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:39:26.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:39:26.%f.INFO basketmate "GET /api/import/records 200 475ms"
+2026-06-06 01:39:26.%f.INFO basketmate [获取菜谱列表] 开始
+2026-06-06 01:39:26.%f.INFO basketmate [获取菜谱列表] 参数: limit=None, offset=None
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 忌口食材: {'苦瓜', '香菇'}
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 喜爱菜谱: set()
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 喜爱食材: {'虾'}
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '鸡公煲' (包含忌口食材)
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '香菇炒肉末' (包含忌口食材)
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '煎香菇' (包含忌口食材)
+2026-06-06 01:39:28.%f.INFO basketmate [filter_recipes_by_preference] 过滤后菜谱数量: 45
+2026-06-06 01:39:28.%f.INFO basketmate [获取菜谱列表] 结果: 共45条
+2026-06-06 01:39:28.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:39:28.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:39:28.%f.INFO basketmate "GET /api/recipes 200 2027ms"
+2026-06-06 01:39:28.%f.INFO basketmate "GET /api/import/records 200 676ms"
+2026-06-06 01:39:28.%f.INFO basketmate [获取计划列表] 开始
+2026-06-06 01:39:29.%f.INFO basketmate [获取计划列表] 结果: <starlette.responses.JSONResponse object at 0x7e5ba655c050>
+2026-06-06 01:39:29.%f.INFO basketmate "GET /api/plans 200 759ms"
+2026-06-06 01:39:29.%f.INFO basketmate [获取价格列表] 开始
+2026-06-06 01:39:30.%f.INFO basketmate [获取价格列表] 结果: 共49条
+2026-06-06 01:39:30.%f.INFO basketmate "GET /api/prices 200 448ms"
+2026-06-06 01:39:30.%f.INFO basketmate [获取店铺列表] 开始
+2026-06-06 01:39:31.%f.INFO basketmate [获取店铺列表] 结果: 共4条
+2026-06-06 01:39:31.%f.INFO basketmate "GET /api/shops 200 460ms"
+2026-06-06 01:39:31.%f.INFO basketmate [获取采购任务] 开始
+2026-06-06 01:39:31.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-06 01:39:31.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-06 01:39:31.%f.INFO basketmate "GET /api/shopping/task 200 455ms"
+2026-06-06 01:39:33.%f.INFO basketmate [删除计划] 开始
+2026-06-06 01:39:33.%f.INFO basketmate [删除计划] 参数: plan_id="f7e1ba6a-3375-4ed4-a649-6414b26b4201"
+2026-06-06 01:39:33.%f.INFO basketmate [删除计划] 先从采购任务中移除计划 f7e1ba6a-3375-4ed4-a649-6414b26b4201
+2026-06-06 01:39:33.%f.INFO basketmate [增量更新] 开始处理计划 f7e1ba6a-3375-4ed4-a649-6414b26b4201, 删除模式=True
+2026-06-06 01:39:34.%f.INFO basketmate [update_pending_items] 已更新采购任务，待购项数量: 2
+2026-06-06 01:39:34.%f.INFO basketmate [增量更新] 计划 f7e1ba6a-3375-4ed4-a649-6414b26b4201 成功，耗时 1540ms
+2026-06-06 01:39:35.%f.INFO basketmate [删除计划] 成功，plan_id=f7e1ba6a-3375-4ed4-a649-6414b26b4201
+2026-06-06 01:39:35.%f.INFO basketmate [删除计划] 结果: <starlette.responses.JSONResponse object at 0x7e5ba657a350>
+2026-06-06 01:39:35.%f.INFO basketmate "DELETE /api/plans/f7e1ba6a-3375-4ed4-a649-6414b26b4201 200 1977ms"
+2026-06-06 01:39:35.%f.INFO basketmate [刷新采购清单] 开始
+2026-06-06 01:39:35.%f.INFO basketmate [刷新采购清单] 参数: request=RefreshRequest
+2026-06-06 01:39:35.%f.INFO basketmate [shopping] 库存数量: 142
+2026-06-06 01:39:35.%f.INFO basketmate [shopping] 库存: id=73f7f710-bce3-4ffb-8a46-f592f3782dea, name=玉米, qty=2
+2026-06-06 01:39:35.%f.INFO basketmate [shopping] 库存: id=f75fa2de-b45d-47fa-a3be-8b9424d175c5, name=小米椒, qty=0
+2026-06-06 01:39:35.%f.INFO basketmate [shopping] 库存: id=3c87eecb-055a-47fc-b1d3-c0986691dea7, name=8号线椒, qty=0
+2026-06-06 01:39:35.%f.INFO basketmate [shopping] 库存: id=d1a1b324-efb1-4508-9176-e89e0df84164, name=大青椒, qty=0
+2026-06-06 01:39:35.%f.INFO basketmate [shopping] 库存: id=08d657af-44f3-41a0-87a5-9650a22e0dae, name=平包菜, qty=0
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱数量: 48
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=e8275488-c311-44ec-bbb4-0d2489c15fa6, 食材数=5: [{'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}, {'quantity': 1, 'ingredient_id': '38b5ac60-6704-4673-8a10-2bf33ce2346d'}, {'quantity': 1, 'ingredient_id': '75a34fe1-ab11-44e2-b720-7cc9ce92f433'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=c9d2d4cb-81bc-4d69-88a2-888b51e0475e, 食材数=7: [{'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': 'f9e933bc-c347-4667-8366-0fe571398bcf'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=44bc7ca5-4776-403a-81a3-500748b254df, 食材数=5: [{'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': '1fa9c725-c362-481f-92e7-96e4f7521d7d'}, {'quantity': 1, 'ingredient_id': '2a485785-60d8-45c8-85ed-ede7cf01eb61'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=d4fe4857-bd40-4b71-ac6c-6e3119e538b5, 食材数=6: [{'quantity': 1, 'ingredient_id': '91e6428b-94d9-424c-b823-c785cbca16ea'}, {'quantity': 1, 'ingredient_id': 'b0ad7a97-9793-40fc-81f4-62a67a578ed3'}, {'quantity': 1, 'ingredient_id': '91705e52-c65e-435c-8fe3-d575eee0cdee'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=27c33559-cefa-4d79-9bd0-994e6a7de41e, 食材数=7: [{'quantity': 1, 'ingredient_id': '2ce612de-c9f0-464e-8d84-882f2e995936'}, {'quantity': 1, 'ingredient_id': '8080be07-0a44-47e6-9c56-3ad8c38a946c'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=7ea8d7d5-f845-4e61-ab55-bf29e3db7250, 食材数=2: [{'quantity': 1, 'ingredient_id': '700cd23f-632f-4a87-956e-9fdbdd5a26e3'}, {'quantity': 1, 'ingredient_id': 'c5e3f8fa-2d93-4445-8c1e-dff64d6929bf'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=1e15b8f3-2ce0-4df9-8c54-ce7a0db075bb, 食材数=2: [{'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}, {'quantity': 2, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=fdfa2fe7-7b2c-4f84-8c4d-7b21d922190b, 食材数=2: [{'quantity': 1, 'ingredient_id': '0de17bab-c321-4afe-91c6-abf633a0a5c2'}, {'quantity': 1, 'ingredient_id': '4bd05007-6e51-4293-9dee-376d182d7940'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=8b9d10f0-e01c-4789-b89c-c3108e6ee53a, 食材数=4: [{'quantity': 1, 'ingredient_id': '0e71f68d-ad3f-411c-a40c-672e5fd1001b'}, {'quantity': 2, 'ingredient_id': '01b8e16b-e81c-42a0-9517-e19f9b7f8bac'}, {'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=a314a38d-eb1c-485c-91a9-aa6920fa569e, 食材数=2: [{'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=5817fcab-90d2-42d2-b6e6-e51087e0c7e2, 食材数=2: [{'quantity': 1, 'ingredient_id': 'b3dbe1fe-72a3-421f-8f26-0548232e2069'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=758fa4fc-0a93-4c05-9f87-039ad815bedf, 食材数=2: [{'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}, {'quantity': 2, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=cb7a65de-728c-4aef-8151-89006e62e760, 食材数=8: [{'quantity': 1, 'ingredient_id': '24545b5b-da27-4470-960a-a4704f2abf89'}, {'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': 'd652aac9-5542-40be-b38c-6bcf6004e9c3'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=3863b8e3-03a6-4dbf-a788-e7ec29dbb9ef, 食材数=7: [{'quantity': 1, 'ingredient_id': 'd60cdee2-a254-4fe2-8b65-924af3043ec7'}, {'quantity': 1, 'ingredient_id': 'aa392790-9fb3-4eb8-b0ce-f25bf884975a'}, {'quantity': 1, 'ingredient_id': 'c40c0f80-f20f-4ecb-b749-ae1a10a55a7e'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=ae0f903a-94fc-43a7-8a25-d0033d5d4f48, 食材数=8: [{'quantity': 1, 'ingredient_id': '3df26565-a3a8-417f-922a-aa3713e4e648'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}, {'quantity': 1, 'ingredient_id': '75a34fe1-ab11-44e2-b720-7cc9ce92f433'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=c1518e20-3854-482c-9aee-1d739aab3766, 食材数=3: [{'quantity': 1, 'ingredient_id': '40c63a68-f690-4765-9188-3832c8cbac99'}, {'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}, {'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=bf3dfaa9-d5eb-4650-a7d5-419d97234fa0, 食材数=1: [{'quantity': 1, 'ingredient_id': '0e71f68d-ad3f-411c-a40c-672e5fd1001b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=75086a78-0585-4ed5-bd00-b652637de44c, 食材数=2: [{'quantity': 1, 'ingredient_id': '246f2249-0b6b-4ae7-902f-5f26add9860b'}, {'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=e1ba8196-abb7-4520-9a7c-7eea31a3e1c5, 食材数=1: [{'quantity': 2, 'ingredient_id': 'cc7ab722-60c5-46ee-80ef-938739901593'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=e6d7188f-3af2-4e4e-95bb-354441354022, 食材数=1: [{'quantity': 1, 'ingredient_id': '8a602d78-5ea9-499b-a00b-32123e364dca'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=aaf0c11f-d5bb-4321-be4f-c0eccb73acd1, 食材数=5: [{'quantity': 1, 'ingredient_id': 'f1313981-3259-450b-aea4-cee06bd3d79a'}, {'quantity': 1, 'ingredient_id': '8cae9ee9-99d3-4c57-bddc-e6c7557e88ff'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=603bbb2e-7545-4e57-abc3-a58542a879fc, 食材数=7: [{'quantity': 1, 'ingredient_id': '9c957d6c-ad9e-41b3-987b-a0fd3e499e2b'}, {'quantity': 1, 'ingredient_id': 'd23e4624-f777-4673-84e2-b4a680768d39'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=744b2287-e541-4b8f-8d36-79bceb81c5ff, 食材数=8: [{'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}, {'quantity': 1, 'ingredient_id': '8eaec0a3-0316-4b90-8945-c090149923c1'}, {'quantity': 1, 'ingredient_id': '24545b5b-da27-4470-960a-a4704f2abf89'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=3db7e667-bf9c-49ac-83b4-34886789dc3d, 食材数=2: [{'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=89491002-08ec-4275-9fff-e2cab6138dce, 食材数=5: [{'quantity': 1, 'ingredient_id': '598f0ccb-13e6-47dc-a93a-d33e8d6f3372'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}, {'quantity': 1, 'ingredient_id': '936e6c92-8524-4259-8a96-c23f2d264015'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=e4f3f246-ccd2-48d9-9ebf-091f5ba7f275, 食材数=7: [{'quantity': 1, 'ingredient_id': 'bbf28f59-acf3-4c1c-88ee-cf8373a2780b'}, {'quantity': 1, 'ingredient_id': '84a521c4-8c44-452b-9599-acccab72efa9'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=4a2d948f-0329-4cd6-9899-69c664a50783, 食材数=6: [{'quantity': 1, 'ingredient_id': '880e2010-0323-4812-a3ad-20fdb306036f'}, {'quantity': 1, 'ingredient_id': 'ab51896a-32dc-48f9-a047-4c6de379736a'}, {'quantity': 1, 'ingredient_id': 'f5f74f08-4318-4974-b249-9cd3440cfb1d'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=08cba0d6-70b4-4708-ad8b-c13d314a0c26, 食材数=8: [{'quantity': 2, 'ingredient_id': 'e8e98289-7af2-4fa4-8b4e-f4ac889d65ae'}, {'quantity': 1, 'ingredient_id': 'f47e45ae-bfe6-45c6-b95e-6a245349942e'}, {'quantity': 1, 'ingredient_id': 'dd4311ec-3452-4819-a248-a105b1fef9d8'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=baeeb4b1-8e13-4fb7-86fa-7c586b518268, 食材数=7: [{'quantity': 1, 'ingredient_id': 'cb806cd2-b3d8-4c6a-97c0-2ddece153eff'}, {'quantity': 1, 'ingredient_id': '84a521c4-8c44-452b-9599-acccab72efa9'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=39c7381a-ef07-45a1-994f-39c45559733e, 食材数=5: [{'quantity': 1, 'ingredient_id': '6ab3fe58-2e0d-4d0c-a4a0-bcd58bf29313'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=c8183d83-a121-47c4-ab04-7c7cdb9094d6, 食材数=2: [{'quantity': 1, 'ingredient_id': '1149bc24-d094-4761-8cc9-90103a434937'}, {'quantity': 1, 'ingredient_id': '0a608e06-9cce-4d98-a066-d6107bcb4c58'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=5416ba6f-5de9-42f3-b26f-aeefb0f52698, 食材数=6: [{'quantity': 1, 'ingredient_id': '0a608e06-9cce-4d98-a066-d6107bcb4c58'}, {'quantity': 1, 'ingredient_id': 'fe07171c-50b5-497d-bb4b-9984ca5d3645'}, {'quantity': 1, 'ingredient_id': '3df26565-a3a8-417f-922a-aa3713e4e648'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=94083d9e-1755-4e2f-8493-fb393d00eefa, 食材数=2: [{'quantity': 1, 'ingredient_id': '86ec0038-5852-42ed-96e5-34e49a9aaf3c'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=50603011-3db2-4a61-8843-936e6c96b93e, 食材数=2: [{'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}, {'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=05e70818-71af-48c7-b74b-15b945ff9778, 食材数=2: [{'quantity': 1, 'ingredient_id': 'c6155f8c-9bbf-4f9b-b03e-12f072b08e41'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=fce8a478-4ea8-4e66-a2b2-73359747e9b4, 食材数=6: [{'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}, {'quantity': 1, 'ingredient_id': '3df26565-a3a8-417f-922a-aa3713e4e648'}, {'quantity': 1, 'ingredient_id': '42879fa2-625f-49c0-89ef-2d8579a6eb10'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=3a317690-57e3-4eb4-8532-177361e70711, 食材数=2: [{'quantity': 1, 'ingredient_id': '6ec0f97a-0355-430b-afe8-fbf9ab0d4551'}, {'quantity': 1, 'ingredient_id': '1149bc24-d094-4761-8cc9-90103a434937'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=f91f522c-9eb4-4360-8a7a-aaa5b419bb3a, 食材数=2: [{'quantity': 1, 'ingredient_id': '7c1b2264-6489-47a4-ac04-eb6e34fe77f4'}, {'quantity': 1, 'ingredient_id': '5361125a-fc87-42c8-8c05-2ca5253a902c'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=e830a40c-481b-4e49-8682-54a2b5d8fb58, 食材数=7: [{'quantity': 1, 'ingredient_id': 'bbf28f59-acf3-4c1c-88ee-cf8373a2780b'}, {'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': 'fe07171c-50b5-497d-bb4b-9984ca5d3645'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=ff064255-5ae6-44d8-9959-7a2937c6d535, 食材数=1: [{'quantity': 1, 'ingredient_id': '86ec0038-5852-42ed-96e5-34e49a9aaf3c'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=26cd94bc-2eb1-4385-8c06-3e6d27cb9356, 食材数=2: [{'quantity': 1, 'ingredient_id': '9c79bdaf-0382-432f-a10a-be2fe1378d7d'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=82e1d711-4227-4b07-ab04-c5d0f38e4294, 食材数=2: [{'quantity': 1, 'ingredient_id': '2c640c73-f523-4054-a7dd-f1a4d05951ad'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=d360f621-7ae0-4012-9d4f-f85b29500cbb, 食材数=3: [{'quantity': 1, 'ingredient_id': '538b7e6c-103d-4931-a618-a5ee16b0beb4'}, {'quantity': 1, 'ingredient_id': 'a9de6acc-6af5-48b2-aba5-f875b4981ce1'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=f2987cbe-8db1-456e-aa42-a529a2bb95f1, 食材数=2: [{'quantity': 1, 'ingredient_id': '40c63a68-f690-4765-9188-3832c8cbac99'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=c94100f5-ac42-4a23-8d52-4d0289369173, 食材数=5: [{'quantity': 1, 'ingredient_id': '5b20c589-d7d8-41f1-98ea-ec835ea1db64'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=91b0fa34-3042-420f-ba0b-4c0d536e9b8f, 食材数=11: [{'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}, {'quantity': 1, 'ingredient_id': 'c40c0f80-f20f-4ecb-b749-ae1a10a55a7e'}, {'quantity': 1, 'ingredient_id': '2ce612de-c9f0-464e-8d84-882f2e995936'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=0e5e7f18-3e06-4d1e-8966-3051ac60fd6c, 食材数=5: [{'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}, {'quantity': 1, 'ingredient_id': 'a0af9968-a7c4-4f7e-a0f4-f65a24aacea5'}, {'quantity': 1, 'ingredient_id': '364df820-0244-4561-af8a-c8b746b33316'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 菜谱rid=2d18cffc-0900-4a9a-9923-8d3e77e177e8, 食材数=1: [{'quantity': 1, 'ingredient_id': 'b08aec55-fda6-4f8e-b6f5-e661d158a63b'}]
+2026-06-06 01:39:36.%f.INFO basketmate [shopping] 查询所有未删除计划，查询到 0 条计划
+2026-06-06 01:39:36.%f.INFO basketmate [shopping refresh] 调用compute_pending_items: plan_rows数量=0, inventory数量=142, recipe_map数量=48, blacklist=[], today=2026-06-06
+2026-06-06 01:39:36.%f.INFO basketmate [compute_pending_items] 开始计算待购项，原始计划数: 0, 过滤后计划数: 0, 库存数: 142, 黑名单: []
+2026-06-06 01:39:36.%f.INFO basketmate [compute_pending_items] 食材需求汇总: 0 种
+2026-06-06 01:39:36.%f.INFO basketmate [compute_pending_items] 无食材需求，返回空列表
+2026-06-06 01:39:36.%f.INFO basketmate [采购刷新] 最终待购项数量: 0
+2026-06-06 01:39:36.%f.WARNING basketmate [采购刷新] 待购项为空！请检查计划汇总或库存对比逻辑
+2026-06-06 01:39:37.%f.INFO basketmate [采购刷新] 待购项为空，保留原有purchase_tasks数据不更新
+2026-06-06 01:39:37.%f.INFO basketmate [刷新采购清单] 结果: pending_items=[]
+2026-06-06 01:39:37.%f.INFO basketmate "POST /api/shopping/task/refresh 200 2299ms"
+2026-06-06 01:39:37.%f.INFO basketmate [获取食材列表] 开始
+2026-06-06 01:39:37.%f.INFO basketmate [获取食材列表] 结果: 共142条
+2026-06-06 01:39:37.%f.INFO basketmate "GET /api/ingredients 200 406ms"
+2026-06-06 01:39:37.%f.INFO basketmate [刷新采购清单] 开始
+2026-06-06 01:39:38.%f.INFO basketmate [刷新采购清单] 参数: request=RefreshRequest
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 库存数量: 142
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 库存: id=73f7f710-bce3-4ffb-8a46-f592f3782dea, name=玉米, qty=2
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 库存: id=f75fa2de-b45d-47fa-a3be-8b9424d175c5, name=小米椒, qty=0
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 库存: id=3c87eecb-055a-47fc-b1d3-c0986691dea7, name=8号线椒, qty=0
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 库存: id=d1a1b324-efb1-4508-9176-e89e0df84164, name=大青椒, qty=0
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 库存: id=08d657af-44f3-41a0-87a5-9650a22e0dae, name=平包菜, qty=0
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱数量: 48
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱rid=e8275488-c311-44ec-bbb4-0d2489c15fa6, 食材数=5: [{'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}, {'quantity': 1, 'ingredient_id': '38b5ac60-6704-4673-8a10-2bf33ce2346d'}, {'quantity': 1, 'ingredient_id': '75a34fe1-ab11-44e2-b720-7cc9ce92f433'}]
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱rid=c9d2d4cb-81bc-4d69-88a2-888b51e0475e, 食材数=7: [{'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': 'f9e933bc-c347-4667-8366-0fe571398bcf'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱rid=44bc7ca5-4776-403a-81a3-500748b254df, 食材数=5: [{'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': '1fa9c725-c362-481f-92e7-96e4f7521d7d'}, {'quantity': 1, 'ingredient_id': '2a485785-60d8-45c8-85ed-ede7cf01eb61'}]
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱rid=d4fe4857-bd40-4b71-ac6c-6e3119e538b5, 食材数=6: [{'quantity': 1, 'ingredient_id': '91e6428b-94d9-424c-b823-c785cbca16ea'}, {'quantity': 1, 'ingredient_id': 'b0ad7a97-9793-40fc-81f4-62a67a578ed3'}, {'quantity': 1, 'ingredient_id': '91705e52-c65e-435c-8fe3-d575eee0cdee'}]
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱rid=27c33559-cefa-4d79-9bd0-994e6a7de41e, 食材数=7: [{'quantity': 1, 'ingredient_id': '2ce612de-c9f0-464e-8d84-882f2e995936'}, {'quantity': 1, 'ingredient_id': '8080be07-0a44-47e6-9c56-3ad8c38a946c'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:38.%f.INFO basketmate [shopping] 菜谱rid=7ea8d7d5-f845-4e61-ab55-bf29e3db7250, 食材数=2: [{'quantity': 1, 'ingredient_id': '700cd23f-632f-4a87-956e-9fdbdd5a26e3'}, {'quantity': 1, 'ingredient_id': 'c5e3f8fa-2d93-4445-8c1e-dff64d6929bf'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=1e15b8f3-2ce0-4df9-8c54-ce7a0db075bb, 食材数=2: [{'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}, {'quantity': 2, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=fdfa2fe7-7b2c-4f84-8c4d-7b21d922190b, 食材数=2: [{'quantity': 1, 'ingredient_id': '0de17bab-c321-4afe-91c6-abf633a0a5c2'}, {'quantity': 1, 'ingredient_id': '4bd05007-6e51-4293-9dee-376d182d7940'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=8b9d10f0-e01c-4789-b89c-c3108e6ee53a, 食材数=4: [{'quantity': 1, 'ingredient_id': '0e71f68d-ad3f-411c-a40c-672e5fd1001b'}, {'quantity': 2, 'ingredient_id': '01b8e16b-e81c-42a0-9517-e19f9b7f8bac'}, {'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=a314a38d-eb1c-485c-91a9-aa6920fa569e, 食材数=2: [{'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=5817fcab-90d2-42d2-b6e6-e51087e0c7e2, 食材数=2: [{'quantity': 1, 'ingredient_id': 'b3dbe1fe-72a3-421f-8f26-0548232e2069'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=758fa4fc-0a93-4c05-9f87-039ad815bedf, 食材数=2: [{'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}, {'quantity': 2, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=cb7a65de-728c-4aef-8151-89006e62e760, 食材数=8: [{'quantity': 1, 'ingredient_id': '24545b5b-da27-4470-960a-a4704f2abf89'}, {'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': 'd652aac9-5542-40be-b38c-6bcf6004e9c3'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=3863b8e3-03a6-4dbf-a788-e7ec29dbb9ef, 食材数=7: [{'quantity': 1, 'ingredient_id': 'd60cdee2-a254-4fe2-8b65-924af3043ec7'}, {'quantity': 1, 'ingredient_id': 'aa392790-9fb3-4eb8-b0ce-f25bf884975a'}, {'quantity': 1, 'ingredient_id': 'c40c0f80-f20f-4ecb-b749-ae1a10a55a7e'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=ae0f903a-94fc-43a7-8a25-d0033d5d4f48, 食材数=8: [{'quantity': 1, 'ingredient_id': '3df26565-a3a8-417f-922a-aa3713e4e648'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}, {'quantity': 1, 'ingredient_id': '75a34fe1-ab11-44e2-b720-7cc9ce92f433'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=c1518e20-3854-482c-9aee-1d739aab3766, 食材数=3: [{'quantity': 1, 'ingredient_id': '40c63a68-f690-4765-9188-3832c8cbac99'}, {'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}, {'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=bf3dfaa9-d5eb-4650-a7d5-419d97234fa0, 食材数=1: [{'quantity': 1, 'ingredient_id': '0e71f68d-ad3f-411c-a40c-672e5fd1001b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=75086a78-0585-4ed5-bd00-b652637de44c, 食材数=2: [{'quantity': 1, 'ingredient_id': '246f2249-0b6b-4ae7-902f-5f26add9860b'}, {'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=e1ba8196-abb7-4520-9a7c-7eea31a3e1c5, 食材数=1: [{'quantity': 2, 'ingredient_id': 'cc7ab722-60c5-46ee-80ef-938739901593'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=e6d7188f-3af2-4e4e-95bb-354441354022, 食材数=1: [{'quantity': 1, 'ingredient_id': '8a602d78-5ea9-499b-a00b-32123e364dca'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=aaf0c11f-d5bb-4321-be4f-c0eccb73acd1, 食材数=5: [{'quantity': 1, 'ingredient_id': 'f1313981-3259-450b-aea4-cee06bd3d79a'}, {'quantity': 1, 'ingredient_id': '8cae9ee9-99d3-4c57-bddc-e6c7557e88ff'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=603bbb2e-7545-4e57-abc3-a58542a879fc, 食材数=7: [{'quantity': 1, 'ingredient_id': '9c957d6c-ad9e-41b3-987b-a0fd3e499e2b'}, {'quantity': 1, 'ingredient_id': 'd23e4624-f777-4673-84e2-b4a680768d39'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=744b2287-e541-4b8f-8d36-79bceb81c5ff, 食材数=8: [{'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}, {'quantity': 1, 'ingredient_id': '8eaec0a3-0316-4b90-8945-c090149923c1'}, {'quantity': 1, 'ingredient_id': '24545b5b-da27-4470-960a-a4704f2abf89'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=3db7e667-bf9c-49ac-83b4-34886789dc3d, 食材数=2: [{'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': '9751f6e5-9c65-4606-b186-0b51a4bd558d'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=89491002-08ec-4275-9fff-e2cab6138dce, 食材数=5: [{'quantity': 1, 'ingredient_id': '598f0ccb-13e6-47dc-a93a-d33e8d6f3372'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}, {'quantity': 1, 'ingredient_id': '936e6c92-8524-4259-8a96-c23f2d264015'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=e4f3f246-ccd2-48d9-9ebf-091f5ba7f275, 食材数=7: [{'quantity': 1, 'ingredient_id': 'bbf28f59-acf3-4c1c-88ee-cf8373a2780b'}, {'quantity': 1, 'ingredient_id': '84a521c4-8c44-452b-9599-acccab72efa9'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=4a2d948f-0329-4cd6-9899-69c664a50783, 食材数=6: [{'quantity': 1, 'ingredient_id': '880e2010-0323-4812-a3ad-20fdb306036f'}, {'quantity': 1, 'ingredient_id': 'ab51896a-32dc-48f9-a047-4c6de379736a'}, {'quantity': 1, 'ingredient_id': 'f5f74f08-4318-4974-b249-9cd3440cfb1d'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=08cba0d6-70b4-4708-ad8b-c13d314a0c26, 食材数=8: [{'quantity': 2, 'ingredient_id': 'e8e98289-7af2-4fa4-8b4e-f4ac889d65ae'}, {'quantity': 1, 'ingredient_id': 'f47e45ae-bfe6-45c6-b95e-6a245349942e'}, {'quantity': 1, 'ingredient_id': 'dd4311ec-3452-4819-a248-a105b1fef9d8'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=baeeb4b1-8e13-4fb7-86fa-7c586b518268, 食材数=7: [{'quantity': 1, 'ingredient_id': 'cb806cd2-b3d8-4c6a-97c0-2ddece153eff'}, {'quantity': 1, 'ingredient_id': '84a521c4-8c44-452b-9599-acccab72efa9'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=39c7381a-ef07-45a1-994f-39c45559733e, 食材数=5: [{'quantity': 1, 'ingredient_id': '6ab3fe58-2e0d-4d0c-a4a0-bcd58bf29313'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=c8183d83-a121-47c4-ab04-7c7cdb9094d6, 食材数=2: [{'quantity': 1, 'ingredient_id': '1149bc24-d094-4761-8cc9-90103a434937'}, {'quantity': 1, 'ingredient_id': '0a608e06-9cce-4d98-a066-d6107bcb4c58'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=5416ba6f-5de9-42f3-b26f-aeefb0f52698, 食材数=6: [{'quantity': 1, 'ingredient_id': '0a608e06-9cce-4d98-a066-d6107bcb4c58'}, {'quantity': 1, 'ingredient_id': 'fe07171c-50b5-497d-bb4b-9984ca5d3645'}, {'quantity': 1, 'ingredient_id': '3df26565-a3a8-417f-922a-aa3713e4e648'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=94083d9e-1755-4e2f-8493-fb393d00eefa, 食材数=2: [{'quantity': 1, 'ingredient_id': '86ec0038-5852-42ed-96e5-34e49a9aaf3c'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=50603011-3db2-4a61-8843-936e6c96b93e, 食材数=2: [{'quantity': 1, 'ingredient_id': '65ace7a1-4a13-4627-a7ed-9d6cf5995a10'}, {'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=05e70818-71af-48c7-b74b-15b945ff9778, 食材数=2: [{'quantity': 1, 'ingredient_id': 'c6155f8c-9bbf-4f9b-b03e-12f072b08e41'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=fce8a478-4ea8-4e66-a2b2-73359747e9b4, 食材数=6: [{'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}, {'quantity': 1, 'ingredient_id': '3df26565-a3a8-417f-922a-aa3713e4e648'}, {'quantity': 1, 'ingredient_id': '42879fa2-625f-49c0-89ef-2d8579a6eb10'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=3a317690-57e3-4eb4-8532-177361e70711, 食材数=2: [{'quantity': 1, 'ingredient_id': '6ec0f97a-0355-430b-afe8-fbf9ab0d4551'}, {'quantity': 1, 'ingredient_id': '1149bc24-d094-4761-8cc9-90103a434937'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=f91f522c-9eb4-4360-8a7a-aaa5b419bb3a, 食材数=2: [{'quantity': 1, 'ingredient_id': '7c1b2264-6489-47a4-ac04-eb6e34fe77f4'}, {'quantity': 1, 'ingredient_id': '5361125a-fc87-42c8-8c05-2ca5253a902c'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=e830a40c-481b-4e49-8682-54a2b5d8fb58, 食材数=7: [{'quantity': 1, 'ingredient_id': 'bbf28f59-acf3-4c1c-88ee-cf8373a2780b'}, {'quantity': 1, 'ingredient_id': 'a878c2e5-8408-42bd-adef-1464e1ed673b'}, {'quantity': 1, 'ingredient_id': 'fe07171c-50b5-497d-bb4b-9984ca5d3645'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=ff064255-5ae6-44d8-9959-7a2937c6d535, 食材数=1: [{'quantity': 1, 'ingredient_id': '86ec0038-5852-42ed-96e5-34e49a9aaf3c'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=26cd94bc-2eb1-4385-8c06-3e6d27cb9356, 食材数=2: [{'quantity': 1, 'ingredient_id': '9c79bdaf-0382-432f-a10a-be2fe1378d7d'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=82e1d711-4227-4b07-ab04-c5d0f38e4294, 食材数=2: [{'quantity': 1, 'ingredient_id': '2c640c73-f523-4054-a7dd-f1a4d05951ad'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=d360f621-7ae0-4012-9d4f-f85b29500cbb, 食材数=3: [{'quantity': 1, 'ingredient_id': '538b7e6c-103d-4931-a618-a5ee16b0beb4'}, {'quantity': 1, 'ingredient_id': 'a9de6acc-6af5-48b2-aba5-f875b4981ce1'}, {'quantity': 1, 'ingredient_id': 'fc97b315-66eb-4824-b3d9-b53df4556281'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=f2987cbe-8db1-456e-aa42-a529a2bb95f1, 食材数=2: [{'quantity': 1, 'ingredient_id': '40c63a68-f690-4765-9188-3832c8cbac99'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=c94100f5-ac42-4a23-8d52-4d0289369173, 食材数=5: [{'quantity': 1, 'ingredient_id': '5b20c589-d7d8-41f1-98ea-ec835ea1db64'}, {'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}, {'quantity': 1, 'ingredient_id': 'a4dc6859-51fd-483b-8363-600de0b3617b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=91b0fa34-3042-420f-ba0b-4c0d536e9b8f, 食材数=11: [{'quantity': 1, 'ingredient_id': '6e9ccbe9-b6b0-4a70-9df0-093ad932f471'}, {'quantity': 1, 'ingredient_id': 'c40c0f80-f20f-4ecb-b749-ae1a10a55a7e'}, {'quantity': 1, 'ingredient_id': '2ce612de-c9f0-464e-8d84-882f2e995936'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=0e5e7f18-3e06-4d1e-8966-3051ac60fd6c, 食材数=5: [{'quantity': 1, 'ingredient_id': '4d2a555b-e838-47ec-8b2c-eeb572cccab1'}, {'quantity': 1, 'ingredient_id': 'a0af9968-a7c4-4f7e-a0f4-f65a24aacea5'}, {'quantity': 1, 'ingredient_id': '364df820-0244-4561-af8a-c8b746b33316'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 菜谱rid=2d18cffc-0900-4a9a-9923-8d3e77e177e8, 食材数=1: [{'quantity': 1, 'ingredient_id': 'b08aec55-fda6-4f8e-b6f5-e661d158a63b'}]
+2026-06-06 01:39:39.%f.INFO basketmate [shopping] 查询所有未删除计划，查询到 0 条计划
+2026-06-06 01:39:40.%f.INFO basketmate [shopping refresh] 调用compute_pending_items: plan_rows数量=0, inventory数量=142, recipe_map数量=48, blacklist=[], today=2026-06-06
+2026-06-06 01:39:40.%f.INFO basketmate [compute_pending_items] 开始计算待购项，原始计划数: 0, 过滤后计划数: 0, 库存数: 142, 黑名单: []
+2026-06-06 01:39:40.%f.INFO basketmate [compute_pending_items] 食材需求汇总: 0 种
+2026-06-06 01:39:40.%f.INFO basketmate [compute_pending_items] 无食材需求，返回空列表
+2026-06-06 01:39:40.%f.INFO basketmate [采购刷新] 最终待购项数量: 0
+2026-06-06 01:39:40.%f.WARNING basketmate [采购刷新] 待购项为空！请检查计划汇总或库存对比逻辑
+2026-06-06 01:39:40.%f.INFO basketmate [采购刷新] 待购项为空，保留原有purchase_tasks数据不更新
+2026-06-06 01:39:40.%f.INFO basketmate [刷新采购清单] 结果: pending_items=[]
+2026-06-06 01:39:40.%f.INFO basketmate "POST /api/shopping/task/refresh 200 2544ms"
+2026-06-06 01:39:40.%f.INFO basketmate [获取菜谱列表] 开始
+2026-06-06 01:39:40.%f.INFO basketmate [获取菜谱列表] 参数: limit=None, offset=None
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 忌口食材: {'苦瓜', '香菇'}
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 喜爱菜谱: set()
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 喜爱食材: {'虾'}
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '鸡公煲' (包含忌口食材)
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '香菇炒肉末' (包含忌口食材)
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '煎香菇' (包含忌口食材)
+2026-06-06 01:39:41.%f.INFO basketmate [filter_recipes_by_preference] 过滤后菜谱数量: 45
+2026-06-06 01:39:41.%f.INFO basketmate [获取菜谱列表] 结果: 共45条
+2026-06-06 01:39:41.%f.INFO basketmate "GET /api/recipes 200 1208ms"
+2026-06-06 01:39:41.%f.INFO basketmate [获取采购任务] 开始
+2026-06-06 01:39:42.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-06 01:39:42.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-06 01:39:42.%f.INFO basketmate "GET /api/shopping/task 200 451ms"
+2026-06-06 01:39:42.%f.INFO basketmate [获取计划列表] 开始
+2026-06-06 01:39:42.%f.INFO basketmate [获取计划列表] 结果: <starlette.responses.JSONResponse object at 0x7e5ba6adb790>
+2026-06-06 01:39:42.%f.INFO basketmate "GET /api/plans 200 423ms"
+2026-06-06 01:39:42.%f.INFO basketmate [获取价格列表] 开始
+2026-06-06 01:39:43.%f.INFO basketmate [获取价格列表] 结果: 共49条
+2026-06-06 01:39:43.%f.INFO basketmate "GET /api/prices 200 685ms"
+2026-06-06 01:39:43.%f.INFO basketmate [获取店铺列表] 开始
+2026-06-06 01:39:44.%f.INFO basketmate [获取店铺列表] 结果: 共4条
+2026-06-06 01:39:44.%f.INFO basketmate "GET /api/shops 200 433ms"
+2026-06-06 01:39:44.%f.INFO basketmate [获取采购任务] 开始
+2026-06-06 01:39:44.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-06 01:39:44.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-06 01:39:44.%f.INFO basketmate "GET /api/shopping/task 200 446ms"
