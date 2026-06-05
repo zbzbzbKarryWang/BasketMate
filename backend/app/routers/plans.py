@@ -15,125 +15,13 @@ router = APIRouter(prefix="/api/plans", tags=["plans"])
 
 
 def update_pending_items_for_plan(plan_id: str, is_deleting: bool = False):
-    """增量更新采购任务 - 只重新计算指定计划的食材"""
-    import time
-    start = time.time()
-    logger.info(f"[增量更新] 开始处理计划 {plan_id}, 删除模式={is_deleting}")
-    
-    try:
-        if is_deleting:
-            # 删除操作
-            shopping_service.update_pending_items_with_sources(
-                database.supabase,
-                plan_id,
-                'deleted'
-            )
-        else:
-            # 创建或更新操作：先计算该计划的需求，再更新
-            new_requirements = shopping_service.compute_pending_items_for_plan(
-                database.supabase,
-                plan_id
-            )
-            logger.info(f"[增量更新] 计划 {plan_id} 的食材需求: {new_requirements}")
-            
-            shopping_service.update_pending_items_with_sources(
-                database.supabase,
-                plan_id,
-                'updated',  # 使用 'updated' 处理创建和更新
-                new_requirements
-            )
-        
-        total_ms = int((time.time() - start) * 1000)
-        logger.info(f"[增量更新] 计划 {plan_id} 成功，耗时 {total_ms}ms")
-    except Exception as e:
-        logger.error(f"[增量更新] 计划 {plan_id} 失败: 错误={str(e)}", exc_info=True)
-        # 失败时回退到全量刷新
-        refresh_purchase_task()
-        total_ms = int((time.time() - start) * 1000)
-        logger.info(f"[增量更新] 计划 {plan_id} 回退到全量刷新，总耗时 {total_ms}ms")
+    """增量更新采购任务 - 调用 service 层函数"""
+    shopping_service.update_pending_items_for_plan(database.supabase, plan_id, is_deleting)
 
 
 def refresh_purchase_task():
-    """刷新采购任务"""
-    import time
-    from datetime import datetime
-    start = time.time()
-    blacklist = []
-    
-    t1 = time.time()
-    ing_rows = database.supabase.table("ingredients").select("id, name, quantity").execute()
-    inventory = ing_rows.data or []
-    logger.info(f"[plans shopping] 库存数量: {len(inventory)}")
-    for inv in inventory[:5]:
-        logger.info(f"[plans shopping] 库存: id={inv.get('id')}, name={inv.get('name')}, qty={inv.get('quantity')}")
-    print(f"[采购刷新-plans] 查询食材 {len(inventory)} 条: {time.time()-t1:.2f}s", flush=True)
-    
-    t2 = time.time()
-    recipe_rows = database.supabase.table("recipes").select("id, ingredients").execute()
-    recipe_map = {row["id"]: row for row in (recipe_rows.data or [])}
-    logger.info(f"[plans shopping] 菜谱数量: {len(recipe_map)}")
-    for rid, r in recipe_map.items():
-        ings = r.get("ingredients") or []
-        logger.info(f"[plans shopping] 菜谱rid={rid}, 食材数={len(ings)}: {ings[:3]}")
-    print(f"[采购刷新-plans] 查询菜谱 {len(recipe_map)} 条: {time.time()-t2:.2f}s", flush=True)
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    t3 = time.time()
-    plan_rows = database.supabase.table("plans").select("id, date, breakfast_recipe_id, meal_ids").execute()
-    logger.info(f"[plans shopping] 查询所有未删除计划，查询到 {len(plan_rows.data or [])} 条计划")
-    for p in (plan_rows.data or []):
-        logger.info(f"[plans shopping] 计划: id={p.get('id')}, date={p.get('date')}, breakfast={p.get('breakfast_recipe_id')}, meals={p.get('meal_ids')}")
-    print(f"[采购刷新-plans] 查询计划: {time.time()-t3:.2f}s", flush=True)
-    
-    t4 = time.time()
-    price_rows = database.supabase.table("prices").select("id, ingredient_id, shop_id, price").execute()
-    prices = price_rows.data or []
-    print(f"[采购刷新-plans] 查询价格 {len(prices)} 条: {time.time()-t4:.2f}s", flush=True)
-    
-    t5 = time.time()
-    logger.info(f"[plans shopping] 调用compute_pending_items: plan_rows数量={len(plan_rows.data or [])}, inventory数量={len(inventory)}, recipe_map数量={len(recipe_map)}, blacklist={blacklist}")
-    pending_items = shopping_service.compute_pending_items(
-        inventory=inventory,
-        recipe_map=recipe_map,
-        plan_rows=(plan_rows.data or []),
-        prices=prices,
-        blacklist=blacklist
-    )
-    print(f"[采购刷新-plans] 计算待购项: {time.time()-t5:.2f}s", flush=True)
-    
-    logger.info(f"[采购刷新-plans] 最终待购项数量: {len(pending_items)}")
-    
-    t6 = time.time()
-    task = database.supabase.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
-    
-    # 检查 task 是否存在
-    if not task or not task.data:
-        # 没有活跃任务
-        if pending_items:
-            database.supabase.table("purchase_tasks").insert({
-                "status": True,  # true=活跃
-                "pending_items": pending_items,
-                "custom_items": [],
-                "completed_items": [],
-                "removed_ingredient_ids": blacklist
-            }).execute()
-            logger.info(f"[采购刷新-plans] 已创建purchase_tasks记录")
-    elif not pending_items:
-        # 有任务但待购项为空，标记为完成
-        database.supabase.table("purchase_tasks").update({
-            "status": False,  # false=已完成
-            "completed_at": datetime.now().isoformat(),
-            "pending_items": [],
-            "custom_items": []
-        }).eq("id", task.data["id"]).execute()
-        logger.info(f"[采购刷新-plans] 待购项为空，已自动完成任务")
-    else:
-        # 有任务也有待购项，更新待购项
-        database.supabase.table("purchase_tasks").update({"pending_items": pending_items}).eq("id", task.data["id"]).execute()
-        logger.info(f"[采购刷新-plans] 已更新purchase_tasks表的pending_items")
-    
-    print(f"[采购刷新-plans] 更新购物清单: {time.time()-t6:.2f}s", flush=True)
-    print(f"[采购刷新-plans] 总耗时: {time.time()-start:.2f}s", flush=True)
+    """刷新采购任务 - 调用 service 层函数"""
+    shopping_service.refresh_purchase_task(database.supabase)
 
 
 @router.get("", response_model=models.ApiResponse[List[models.PlanResponse]])

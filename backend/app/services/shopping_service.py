@@ -1,8 +1,118 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+import time
 from ..logger import get_logger
 
 logger = get_logger("basketmate")
+
+
+def refresh_purchase_task(supabase_client):
+    """刷新采购任务"""
+    start = time.time()
+    blacklist = []
+    
+    t1 = time.time()
+    ing_rows = supabase_client.table("ingredients").select("id, name, quantity").execute()
+    inventory = ing_rows.data or []
+    logger.info(f"[shopping service] 库存数量: {len(inventory)}")
+    for inv in inventory[:5]:
+        logger.info(f"[shopping service] 库存: id={inv.get('id')}, name={inv.get('name')}, qty={inv.get('quantity')}")
+    print(f"[采购刷新-service] 查询食材 {len(inventory)} 条: {time.time()-t1:.2f}s", flush=True)
+    
+    t2 = time.time()
+    recipe_rows = supabase_client.table("recipes").select("id, ingredients").execute()
+    recipe_map = {row["id"]: row for row in (recipe_rows.data or [])}
+    logger.info(f"[shopping service] 菜谱数量: {len(recipe_map)}")
+    for rid, r in recipe_map.items():
+        ings = r.get("ingredients") or []
+        logger.info(f"[shopping service] 菜谱rid={rid}, 食材数={len(ings)}: {ings[:3]}")
+    print(f"[采购刷新-service] 查询菜谱 {len(recipe_map)} 条: {time.time()-t2:.2f}s", flush=True)
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    t3 = time.time()
+    plan_rows = supabase_client.table("plans").select("id, date, breakfast_recipe_id, meal_ids").execute()
+    logger.info(f"[shopping service] 查询所有未删除计划，查询到 {len(plan_rows.data or [])} 条计划")
+    for p in (plan_rows.data or []):
+        logger.info(f"[shopping service] 计划: id={p.get('id')}, date={p.get('date')}, breakfast={p.get('breakfast_recipe_id')}, meals={p.get('meal_ids')}")
+    print(f"[采购刷新-service] 查询计划: {time.time()-t3:.2f}s", flush=True)
+    
+    t4 = time.time()
+    price_rows = supabase_client.table("prices").select("id, ingredient_id, shop_id, price").execute()
+    prices = price_rows.data or []
+    print(f"[采购刷新-service] 查询价格 {len(prices)} 条: {time.time()-t4:.2f}s", flush=True)
+    
+    t5 = time.time()
+    logger.info(f"[shopping service] 调用compute_pending_items: plan_rows数量={len(plan_rows.data or [])}, inventory数量={len(inventory)}, recipe_map数量={len(recipe_map)}, blacklist={blacklist}")
+    pending_items = compute_pending_items(
+        inventory=inventory,
+        recipe_map=recipe_map,
+        plan_rows=(plan_rows.data or []),
+        prices=prices,
+        blacklist=blacklist
+    )
+    
+    print(f"[采购刷新-service] compute_pending_items {len(pending_items)} 结果: {time.time()-t5:.2f}s", flush=True)
+    t6 = time.time()
+    
+    # 查询活跃任务
+    active_task = supabase_client.table("purchase_tasks").select("*").eq("status", True).maybe_single().execute()
+    if active_task and active_task.data:
+        # 更新现有任务
+        supabase_client.table("purchase_tasks").update({
+            "pending_items": pending_items,
+            "custom_items": active_task.data.get("custom_items", [])
+        }).eq("id", active_task.data["id"]).execute()
+        logger.info(f"[shopping service] 更新现有任务，待购项数量: {len(pending_items)}")
+    else:
+        # 创建新任务
+        supabase_client.table("purchase_tasks").insert({
+            "status": True,
+            "pending_items": pending_items,
+            "custom_items": [],
+            "completed_items": [],
+            "removed_ingredient_ids": blacklist
+        }).execute()
+        logger.info(f"[shopping service] 创建新任务，待购项数量: {len(pending_items)}")
+    
+    print(f"[采购刷新-service] 数据库操作: {time.time()-t6:.2f}s, 总耗时 {time.time()-start:.2f}s", flush=True)
+
+
+def update_pending_items_for_plan(supabase_client, plan_id: str, is_deleting: bool = False):
+    """增量更新采购任务 - 只重新计算指定计划的食材"""
+    start = time.time()
+    logger.info(f"[增量更新] 开始处理计划 {plan_id}, 删除模式={is_deleting}")
+    
+    try:
+        if is_deleting:
+            # 删除操作
+            update_pending_items_with_sources(
+                supabase_client,
+                plan_id,
+                'deleted'
+            )
+        else:
+            # 创建或更新操作：先计算该计划的需求，再更新
+            new_requirements = compute_pending_items_for_plan(
+                supabase_client,
+                plan_id
+            )
+            logger.info(f"[增量更新] 计划 {plan_id} 的食材需求: {new_requirements}")
+            
+            update_pending_items_with_sources(
+                supabase_client,
+                plan_id,
+                'updated',
+                new_requirements
+            )
+        
+        total_ms = int((time.time() - start) * 1000)
+        logger.info(f"[增量更新] 计划 {plan_id} 成功，耗时 {total_ms}ms")
+    except Exception as e:
+        logger.error(f"[增量更新] 计划 {plan_id} 失败: 错误={str(e)}", exc_info=True)
+        # 失败时回退到全量刷新
+        refresh_purchase_task(supabase_client)
+        total_ms = int((time.time() - start) * 1000)
+        logger.info(f"[增量更新] 计划 {plan_id} 回退到全量刷新，总耗时 {total_ms}ms")
 
 
 def parse_recipe_ingredients(ingredients: List[dict]) -> List[dict]:

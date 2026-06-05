@@ -3,12 +3,12 @@
 create extension if not exists "pgcrypto";
 
 -- 食材 / 库存
--- IMPORTANT: unit 字段已永久废弃，以后任何代码都不应该再使用！
 create table if not exists public.ingredients (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   quantity double precision not null default 0,
-  added_at timestamptz not null default now()
+  added_at timestamptz not null default now(),
+  alias text
 );
 
 -- 店铺
@@ -31,7 +31,8 @@ create table if not exists public.recipes (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   category text not null,
-  ingredients jsonb not null default '[]'::jsonb
+  ingredients jsonb not null default '[]'::jsonb,
+  notes text
 );
 
 -- 计划
@@ -44,15 +45,16 @@ create table if not exists public.plans (
   breakfast_wheel_hidden_ids text[] not null default '{}'
 );
 
--- 采购清单（含临时项：ingredient_id 可空）
-create table if not exists public.shopping_list (
+-- 采购任务
+create table if not exists public.purchase_tasks (
   id uuid primary key default gen_random_uuid(),
-  ingredient_id uuid references public.ingredients (id) on delete set null,
-  shop_name text not null default '待定',
-  need_quantity double precision not null default 1,
-  checked boolean not null default false,
-  ingredient_name text,
-  is_ephemeral boolean not null default false
+  status boolean not null default true,
+  pending_items jsonb not null default '[]'::jsonb,
+  custom_items jsonb not null default '[]'::jsonb,
+  completed_items jsonb not null default '[]'::jsonb,
+  removed_ingredient_ids uuid[] not null default '{}',
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
 );
 
 -- 导入记录
@@ -64,12 +66,19 @@ create table if not exists public.import_records (
   status text not null default 'pending',
   items jsonb not null default '[]'::jsonb,
   image_count integer not null default 0,
-  viewed boolean not null default false
+  viewed boolean not null default false,
+  deleted_patterns text[] not null default '{}'
+);
+
+-- 黑名单
+create table if not exists public.blacklist (
+  id uuid primary key default gen_random_uuid(),
+  pattern text not null,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists idx_plans_date on public.plans (date);
 create index if not exists idx_prices_ingredient on public.prices (ingredient_id);
-create index if not exists idx_shopping_ingredient on public.shopping_list (ingredient_id);
 create index if not exists idx_import_records_created_at on public.import_records (created_at desc);
 
 -- 开发用：允许匿名读写（生产请改为认证用户 + 细粒度策略）
@@ -78,16 +87,18 @@ alter table public.shops enable row level security;
 alter table public.prices enable row level security;
 alter table public.recipes enable row level security;
 alter table public.plans enable row level security;
-alter table public.shopping_list enable row level security;
+alter table public.purchase_tasks enable row level security;
 alter table public.import_records enable row level security;
+alter table public.blacklist enable row level security;
 
 create policy "ingredients_all" on public.ingredients for all using (true) with check (true);
 create policy "shops_all" on public.shops for all using (true) with check (true);
 create policy "prices_all" on public.prices for all using (true) with check (true);
 create policy "recipes_all" on public.recipes for all using (true) with check (true);
 create policy "plans_all" on public.plans for all using (true) with check (true);
-create policy "shopping_list_all" on public.shopping_list for all using (true) with check (true);
+create policy "purchase_tasks_all" on public.purchase_tasks for all using (true) with check (true);
 create policy "import_records_all" on public.import_records for all using (true) with check (true);
+create policy "blacklist_all" on public.blacklist for all using (true) with check (true);
 
 -- 用户画像
 create table if not exists public.user_profiles (

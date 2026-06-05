@@ -8,51 +8,15 @@ from ..dependencies import get_current_user, User
 from ..services import shopping_service
 from ..decorators import log_operation
 from ..logger import get_logger
-from ..routers.plans import refresh_purchase_task as do_refresh
 
 logger = get_logger("basketmate")
 
 router = APIRouter(prefix="/api/shopping", tags=["shopping"])
 
 
-def update_pending_items_for_plan(plan_id: str, is_deleting: bool = False):
-    """增量更新采购任务 - 只重新计算指定计划的食材"""
-    import time
-    start = time.time()
-    logger.info(f"[增量更新] 开始处理计划 {plan_id}, 删除模式={is_deleting}")
-    
-    try:
-        if is_deleting:
-            # 删除操作
-            shopping_service.update_pending_items_with_sources(
-                database.supabase,
-                plan_id,
-                'deleted'
-            )
-        else:
-            # 创建或更新操作：先计算该计划的需求，再更新
-            new_requirements = shopping_service.compute_pending_items_for_plan(
-                database.supabase,
-                plan_id
-            )
-            logger.info(f"[增量更新] 计划 {plan_id} 的食材需求: {new_requirements}")
-            
-            shopping_service.update_pending_items_with_sources(
-                database.supabase,
-                plan_id,
-                'updated',  # 使用 'updated' 处理创建和更新
-                new_requirements
-            )
-        
-        total_ms = int((time.time() - start) * 1000)
-        logger.info(f"[增量更新] 计划 {plan_id} 成功，耗时 {total_ms}ms")
-    except Exception as e:
-        logger.error(f"[增量更新] 计划 {plan_id} 失败: 错误={str(e)}", exc_info=True)
-        # 失败时回退到全量刷新
-        from ..routers.plans import refresh_purchase_task
-        refresh_purchase_task()
-        total_ms = int((time.time() - start) * 1000)
-        logger.info(f"[增量更新] 计划 {plan_id} 回退到全量刷新，总耗时 {total_ms}ms")
+def refresh_purchase_task():
+    """刷新采购任务 - 调用 service 层函数"""
+    shopping_service.refresh_purchase_task(database.supabase)
 
 
 @router.get("/task", response_model=models.ApiResponse[models.PurchaseTaskResponse])

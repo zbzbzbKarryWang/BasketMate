@@ -49265,3 +49265,83 @@ During task with name 'agent' and id '31071e77-3d7c-1b4f-b093-d488e4f14bd0'
 2026-06-04 13:41:40.%f.INFO basketmate [获取导入记录列表] 开始
 2026-06-04 13:41:41.%f.INFO basketmate [获取导入记录列表] 结果: 共13条
 2026-06-04 13:41:41.%f.INFO basketmate "GET /api/import/records 200 397ms"
+2026-06-06 01:05:55.%f.INFO basketmate [OCR Service] 加载了 142 个食材，构建了 359 个别名映射
+2026-06-06 01:05:55.%f.INFO basketmate [OCR Service] 加载了 7 个黑名单模式
+2026-06-06 01:08:38.%f.INFO basketmate [OCR Service] 加载了 142 个食材，构建了 359 个别名映射
+2026-06-06 01:08:39.%f.INFO basketmate [OCR Service] 加载了 7 个黑名单模式
+2026-06-06 01:34:20.%f.INFO basketmate [获取食材列表] 开始
+2026-06-06 01:34:22.%f.INFO basketmate [获取食材列表] 结果: 共142条
+2026-06-06 01:34:22.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:34:23.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:34:23.%f.INFO basketmate "GET /api/ingredients 200 3109ms"
+2026-06-06 01:34:23.%f.INFO basketmate "GET /api/import/records 200 742ms"
+2026-06-06 01:34:23.%f.INFO basketmate [获取菜谱列表] 开始
+2026-06-06 01:34:23.%f.INFO basketmate [获取菜谱列表] 参数: limit=None, offset=None
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 忌口食材: {'苦瓜', '香菇'}
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 喜爱菜谱: set()
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 喜爱食材: {'虾'}
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '鸡公煲' (包含忌口食材)
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '香菇炒肉末' (包含忌口食材)
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 过滤菜谱 '煎香菇' (包含忌口食材)
+2026-06-06 01:34:24.%f.INFO basketmate [filter_recipes_by_preference] 过滤后菜谱数量: 45
+2026-06-06 01:34:24.%f.INFO basketmate [获取菜谱列表] 结果: 共45条
+2026-06-06 01:34:24.%f.INFO basketmate "GET /api/recipes 200 1253ms"
+2026-06-06 01:34:24.%f.INFO basketmate [获取计划列表] 开始
+2026-06-06 01:34:25.%f.INFO basketmate [获取计划列表] 结果: <starlette.responses.JSONResponse object at 0x79ac70a8bed0>
+2026-06-06 01:34:25.%f.INFO basketmate "GET /api/plans 200 398ms"
+2026-06-06 01:34:25.%f.INFO basketmate [获取价格列表] 开始
+2026-06-06 01:34:25.%f.INFO basketmate [获取价格列表] 结果: 共49条
+2026-06-06 01:34:25.%f.INFO basketmate "GET /api/prices 200 445ms"
+2026-06-06 01:34:25.%f.INFO basketmate [获取店铺列表] 开始
+2026-06-06 01:34:26.%f.INFO basketmate [获取店铺列表] 结果: 共4条
+2026-06-06 01:34:26.%f.INFO basketmate "GET /api/shops 200 410ms"
+2026-06-06 01:34:26.%f.INFO basketmate [获取采购任务] 开始
+2026-06-06 01:34:26.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-06 01:34:26.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-06 01:34:26.%f.INFO basketmate "GET /api/shopping/task 200 437ms"
+2026-06-06 01:34:31.%f.INFO basketmate [获取采购任务] 开始
+2026-06-06 01:34:31.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-06 01:34:31.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-06 01:34:31.%f.INFO basketmate "GET /api/shopping/task 200 410ms"
+2026-06-06 01:34:37.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:34:38.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:34:38.%f.INFO basketmate "GET /api/import/records 200 1534ms"
+2026-06-06 01:34:46.%f.INFO basketmate [获取采购任务] 开始
+2026-06-06 01:34:48.%f.INFO basketmate [获取采购任务] 成功，待购项数量: 2
+2026-06-06 01:34:48.%f.INFO basketmate [获取采购任务] 结果: id=c44f0a47-b69b-4f23-adb3-dbc477679bc5
+2026-06-06 01:34:48.%f.INFO basketmate "GET /api/shopping/task 200 1202ms"
+2026-06-06 01:34:48.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:34:48.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:34:48.%f.INFO basketmate "GET /api/import/records 200 409ms"
+2026-06-06 01:34:48.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:34:49.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:34:49.%f.INFO basketmate "GET /api/import/records 200 398ms"
+2026-06-06 01:34:49.%f.INFO basketmate [获取食材列表] 开始
+2026-06-06 01:34:49.%f.INFO basketmate [获取食材列表] 结果: 共142条
+2026-06-06 01:34:49.%f.INFO basketmate "GET /api/ingredients 200 378ms"
+2026-06-06 01:34:51.%f.INFO basketmate [获取导入记录详情] 开始
+2026-06-06 01:34:51.%f.INFO basketmate [获取导入记录详情] 参数: record_id="6d7690b0-8378-4b57-bf0b-fead68a1f2c6"
+2026-06-06 01:34:52.%f.INFO basketmate [获取导入记录详情] 结果: id=6d7690b0-8378-4b57-bf0b-fead68a1f2c6
+2026-06-06 01:34:52.%f.INFO basketmate "GET /api/import/records/6d7690b0-8378-4b57-bf0b-fead68a1f2c6 200 786ms"
+2026-06-06 01:34:52.%f.INFO basketmate [获取导入记录详情] 开始
+2026-06-06 01:34:52.%f.INFO basketmate [获取导入记录详情] 参数: record_id="6d7690b0-8378-4b57-bf0b-fead68a1f2c6"
+2026-06-06 01:34:53.%f.INFO basketmate [获取导入记录详情] 结果: id=6d7690b0-8378-4b57-bf0b-fead68a1f2c6
+2026-06-06 01:34:53.%f.INFO basketmate "GET /api/import/records/6d7690b0-8378-4b57-bf0b-fead68a1f2c6 200 776ms"
+2026-06-06 01:34:56.%f.INFO basketmate [获取食材列表] 开始
+2026-06-06 01:34:57.%f.INFO basketmate [获取食材列表] 结果: 共142条
+2026-06-06 01:34:57.%f.INFO basketmate "GET /api/ingredients 200 388ms"
+2026-06-06 01:34:57.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:34:57.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:34:57.%f.INFO basketmate "GET /api/import/records 200 389ms"
+2026-06-06 01:34:58.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:34:58.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:34:58.%f.INFO basketmate "GET /api/import/records 200 390ms"
+2026-06-06 01:34:59.%f.INFO basketmate [获取最近日志] 开始
+2026-06-06 01:34:59.%f.INFO basketmate [获取最近日志] 参数: minutes=120
+2026-06-06 01:35:00.%f.INFO basketmate [获取最近日志] 结果: 仅显示最近 500 行日志（共 49340 行）
+
+2026-06-04 13:26:07.%f.INFO basketmate.ai_chat [ai_chat:default] SSE 事件: t
+2026-06-06 01:35:00.%f.INFO basketmate "GET /api/logs/recent 200 1268ms"
+2026-06-06 01:35:06.%f.INFO basketmate [获取导入记录列表] 开始
+2026-06-06 01:35:07.%f.INFO basketmate [获取导入记录列表] 结果: 共14条
+2026-06-06 01:35:07.%f.INFO basketmate "GET /api/import/records 200 996ms"

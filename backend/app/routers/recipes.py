@@ -2,22 +2,25 @@ import time
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from typing import List, Optional
-from app import models as models
-from app.database import get_supabase
-from app.models import Recipe
-from app.decorators import log_operation
-from app.services.user_profile_service import filter_recipes_by_preference, get_recipe_ingredient_names
+from .. import models
+from .. import database
+from ..decorators import log_operation
+from ..services.user_profile_service import filter_recipes_by_preference, get_recipe_ingredient_names
+from ..logger import get_logger
+
+logger = get_logger("basketmate")
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
 
-@router.get("")
+
+@router.get("", response_model=models.ApiResponse[List[dict]])
 @log_operation("获取菜谱列表")
 async def get_recipes(
     limit: Optional[int] = Query(None, ge=1),
     offset: Optional[int] = Query(None, ge=0)
 ):
     start_total = time.time()
-    db = get_supabase()
+    db = database.supabase
 
     query = db.table("recipes").select("*")
     if limit is not None:
@@ -64,11 +67,12 @@ async def get_recipes(
     print(f"[耗时] GET /recipes {time.time() - start_total:.2f}s", flush=True)
     return models.ApiResponse.ok(recipes)
 
-@router.get("/{recipe_id}")
+
+@router.get("/{recipe_id}", response_model=models.ApiResponse[dict])
 @log_operation("获取菜谱详情")
 async def get_recipe(recipe_id: str):
     start = time.time()
-    db = get_supabase()
+    db = database.supabase
     resp = db.table("recipes").select("*").eq("id", recipe_id).execute()
     if not resp.data:
         return JSONResponse(

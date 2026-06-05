@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Mic, Send, Image as ImageIcon, X, User, Loader2, Edit3 } from 'lucide-react'
+import { Mic, Send, Image as ImageIcon, X, User, Loader2, Edit3, ArrowLeft } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -31,6 +32,7 @@ interface PendingImage {
 }
 
 export default function AIChatPage() {
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -508,8 +510,15 @@ export default function AIChatPage() {
   return (
     <div className="flex flex-col h-screen bg-[#F5F4F0]">
       <header className="flex-shrink-0 w-full bg-white border-b sticky top-0 z-10">
-        <div className="flex items-center justify-center h-14 px-4">
-          <h1 className="text-lg font-semibold flex items-center gap-2">
+        <div className="flex items-center h-14 px-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="返回"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <h1 className="flex-1 text-center text-lg font-semibold flex items-center justify-center gap-2 pr-8">
             <span className="text-xl">👩‍🍳</span>
             厨房搭子
           </h1>

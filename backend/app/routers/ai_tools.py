@@ -422,12 +422,12 @@ def delete_ingredient(ingredient_id: str) -> str:
 @langchain_tool
 def resolve_ingredient(name_or_id: str) -> str:
     """
-    按名称或 ID 解析食材。先按 ID 精确查找，再按名称查找。
+    按名称或 ID 解析食材。先按 ID 精确查找，再按名称精确匹配。
 
     参数：
         name_or_id: 食材名称或 ID
 
-    返回：JSON 字符串，匹配的食材信息；未找到返回空。
+    返回：JSON 字符串，匹配的食材信息；未找到返回提示信息。
 
     副作用：无（只读）
     """
@@ -441,26 +441,36 @@ def resolve_ingredient(name_or_id: str) -> str:
             # 按 ID 查找
             resp = database.supabase.table("ingredients").select("*").eq("id", name_or_id).maybe_single().execute()
             if resp and resp.data:
-                logger.info(f"[tool:resolve_ingredient] 按ID匹配: {name_or_id}")
+                logger.info(f"[tool:resolve_ingredient] 按ID匹配成功: {name_or_id}")
                 return json.dumps(resp.data, ensure_ascii=False, default=str)
         else:
-            # 按名称查找（忽略大小写）
-            resp = database.supabase.table("ingredients").select("*").ilike("name", f"%{name_or_id}%").maybe_single().execute()
+            # 先按名称精确匹配
+            resp = database.supabase.table("ingredients").select("*").eq("name", name_or_id).maybe_single().execute()
             if resp and resp.data:
-                logger.info(f"[tool:resolve_ingredient] 按名称匹配: {name_or_id}")
+                logger.info(f"[tool:resolve_ingredient] 按名称精确匹配成功: {name_or_id}")
                 return json.dumps(resp.data, ensure_ascii=False, default=str)
-
-        logger.info(f"[tool:resolve_ingredient] 未找到食材: {name_or_id}")
-        return json.dumps({
-            "error": f"未找到名为「{name_or_id}」的食材",
-            "suggestion": "请确认食材名称是否正确，或使用 create_ingredient 工具创建新食材记录（默认数量为0）"
-        }, ensure_ascii=False)
+            
+            # 再按名称模糊匹配（包含）
+            resp = database.supabase.table("ingredients").select("*").ilike("name", f"%{name_or_id}%").execute()
+            if resp and resp.data and len(resp.data) > 0:
+                logger.info(f"[tool:resolve_ingredient] 按名称模糊匹配成功: {name_or_id}, 找到 {len(resp.data)} 个结果")
+                return json.dumps(resp.data[0], ensure_ascii=False, default=str)
         
-    except Exception as e:
-        logger.error(f"[tool:resolve_ingredient] 查询失败: {name_or_id}, 错误: {str(e)}")
+        # 未找到食材，返回友好提示
+        logger.warning(f"[tool:resolve_ingredient] 未找到食材: {name_or_id}")
         return json.dumps({
-            "error": f"查询食材时发生错误: {str(e)}",
-            "suggestion": "请稍后重试，或确认食材名称是否正确"
+            "error": "not_found",
+            "message": f"未找到食材 '{name_or_id}'，你是否表述有误？如果确认要添加这个食材，请告诉我，我会为你创建记录（默认数量为0）。",
+            "suggestion": "请确认食材名称是否正确，或使用 'create_or_update_ingredient' 创建新食材"
+        }, ensure_ascii=False)
+    
+    except Exception as e:
+        # 捕获所有异常，包括 APIError（如 204 错误）
+        logger.error(f"[tool:resolve_ingredient] 调用失败: {name_or_id}, 错误: {str(e)}", exc_info=True)
+        return json.dumps({
+            "error": "api_error",
+            "message": f"查询食材时发生错误: {str(e)}",
+            "original_input": name_or_id
         }, ensure_ascii=False)
 
 
